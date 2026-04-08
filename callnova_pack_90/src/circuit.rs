@@ -1,10 +1,11 @@
 use crate::{
     dctq::{DCTQ_BLOCK_SIZE, DCTQ_BLOCKS_PER_STEP, DCTQ_CHANNELS, d_matrix, q_matrix},
     hash::{
-        PACKED_CHUNKS_PER_ROW, PackedPixelsRow, PIXELS_PER_CHUNK, Scalar,
-        pack_step_chunks, pack_step_pixels, row_hashes_from_chunks, shift24_powers, step_digest,
+        PACKED_CHUNKS_PER_ROW, PackedPixelsStep, PIXELS_PER_CHUNK, Scalar,
+        STEP_DIGEST_GROUPS, pack_step_chunks, pack_step_pixels, row_hashes_from_chunks,
+        shift24_powers, step_digest,
     },
-    input::{DCTQ_STEP_ROWS, DctqStep, Pixel},
+    input::{DCTQ_HD_WIDTH, DCTQ_STEP_ROWS, DctqStep, Pixel},
     poseidon::{poseidon_hash_2_allocated, poseidon_hash_8_allocated},
 };
 use ff::{Field, PrimeField};
@@ -17,8 +18,8 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub struct PreparedStep {
     pub step: DctqStep,
-    pub packed_pixels: [PackedPixelsRow; 8],
-    pub row_hashes: [Scalar; 8],
+    pub packed_pixels: PackedPixelsStep,
+    pub row_hashes: [Scalar; DCTQ_STEP_ROWS],
     pub step_digest: Scalar,
 }
 
@@ -36,7 +37,7 @@ impl PreparedStep {
     }
 
     pub fn zero() -> Self {
-        Self::from_step([[[0u8; 3]; 160]; 8])
+        Self::from_step([[[0u8; 3]; DCTQ_HD_WIDTH]; DCTQ_STEP_ROWS])
     }
 }
 
@@ -149,11 +150,11 @@ impl StepCircuit<Scalar> for DctqStepCircuit {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        let row_hash_array: [AllocatedNum<Scalar>; 8] = row_hashes
+        let row_hash_array: [AllocatedNum<Scalar>; DCTQ_STEP_ROWS] = row_hashes
             .try_into()
-            .expect("prepared step always hashes exactly 8 rows");
+            .expect("prepared step always hashes exactly 64 rows");
 
-        let digest_allocated = poseidon_hash_8_allocated(
+        let digest_allocated = reduce_row_hashes_64_allocated(
             &mut cs.namespace(|| "step_digest"),
             &row_hash_array,
         )?;
@@ -187,64 +188,68 @@ fn enforce_dctq_layers<CS: ConstraintSystem<Scalar>>(
     let q = q_matrix().expect("fixed quantization matrix must parse");
 
     for channel_idx in 0..DCTQ_CHANNELS {
-        for block_idx in 0..DCTQ_BLOCKS_PER_STEP {
-            let block_col = block_idx * DCTQ_BLOCK_SIZE;
+        for block_row_idx in 0..(DCTQ_STEP_ROWS / DCTQ_BLOCK_SIZE) {
+            let block_row = block_row_idx * DCTQ_BLOCK_SIZE;
+            for block_idx in 0..DCTQ_BLOCKS_PER_STEP {
+                let block_col = block_idx * DCTQ_BLOCK_SIZE;
 
-            let mut left_block = Vec::with_capacity(DCTQ_BLOCK_SIZE);
-            for out_r in 0..DCTQ_BLOCK_SIZE {
-                let mut row = Vec::with_capacity(DCTQ_BLOCK_SIZE);
-                for col_offset in 0..DCTQ_BLOCK_SIZE {
-                    let input_col = block_col + col_offset;
-                    let inputs: [AllocatedNum<Scalar>; DCTQ_BLOCK_SIZE] = std::array::from_fn(|k| {
-                        step_channels[k][input_col][channel_idx].clone()
-                    });
-                    let output = allocate_linear_combination_output(
-                        &mut cs.namespace(|| {
-                            format!(
-                                "channel_{channel_idx}_block_{block_idx}_left_r_{out_r}_c_{col_offset}"
-                            )
-                        }),
-                        &inputs,
-                        &d[out_r],
-                    )?;
-                    row.push(output);
+                let mut left_block = Vec::with_capacity(DCTQ_BLOCK_SIZE);
+                for out_r in 0..DCTQ_BLOCK_SIZE {
+                    let mut row = Vec::with_capacity(DCTQ_BLOCK_SIZE);
+                    for col_offset in 0..DCTQ_BLOCK_SIZE {
+                        let input_col = block_col + col_offset;
+                        let inputs: [AllocatedNum<Scalar>; DCTQ_BLOCK_SIZE] =
+                            std::array::from_fn(|k| {
+                                step_channels[block_row + k][input_col][channel_idx].clone()
+                            });
+                        let output = allocate_linear_combination_output(
+                            &mut cs.namespace(|| {
+                                format!(
+                                    "channel_{channel_idx}_block_row_{block_row_idx}_block_{block_idx}_left_r_{out_r}_c_{col_offset}"
+                                )
+                            }),
+                            &inputs,
+                            &d[out_r],
+                        )?;
+                        row.push(output);
+                    }
+                    left_block.push(row);
                 }
-                left_block.push(row);
-            }
 
-            let mut right_block = Vec::with_capacity(DCTQ_BLOCK_SIZE);
-            for row_idx in 0..DCTQ_BLOCK_SIZE {
-                let mut row = Vec::with_capacity(DCTQ_BLOCK_SIZE);
-                for out_c in 0..DCTQ_BLOCK_SIZE {
-                    let inputs: [AllocatedNum<Scalar>; DCTQ_BLOCK_SIZE] =
-                        std::array::from_fn(|k| left_block[row_idx][k].clone());
-                    let coeffs: [Scalar; DCTQ_BLOCK_SIZE] =
-                        std::array::from_fn(|k| d[k][out_c]);
-                    let output = allocate_linear_combination_output(
-                        &mut cs.namespace(|| {
-                            format!(
-                                "channel_{channel_idx}_block_{block_idx}_right_r_{row_idx}_c_{out_c}"
-                            )
-                        }),
-                        &inputs,
-                        &coeffs,
-                    )?;
-                    row.push(output);
+                let mut right_block = Vec::with_capacity(DCTQ_BLOCK_SIZE);
+                for row_idx in 0..DCTQ_BLOCK_SIZE {
+                    let mut row = Vec::with_capacity(DCTQ_BLOCK_SIZE);
+                    for out_c in 0..DCTQ_BLOCK_SIZE {
+                        let inputs: [AllocatedNum<Scalar>; DCTQ_BLOCK_SIZE] =
+                            std::array::from_fn(|k| left_block[row_idx][k].clone());
+                        let coeffs: [Scalar; DCTQ_BLOCK_SIZE] =
+                            std::array::from_fn(|k| d[k][out_c]);
+                        let output = allocate_linear_combination_output(
+                            &mut cs.namespace(|| {
+                                format!(
+                                    "channel_{channel_idx}_block_row_{block_row_idx}_block_{block_idx}_right_r_{row_idx}_c_{out_c}"
+                                )
+                            }),
+                            &inputs,
+                            &coeffs,
+                        )?;
+                        row.push(output);
+                    }
+                    right_block.push(row);
                 }
-                right_block.push(row);
-            }
 
-            for row_idx in 0..DCTQ_BLOCK_SIZE {
-                for col_idx in 0..DCTQ_BLOCK_SIZE {
-                    allocate_scaled_output(
-                        &mut cs.namespace(|| {
-                            format!(
-                                "channel_{channel_idx}_block_{block_idx}_dctq_r_{row_idx}_c_{col_idx}"
-                            )
-                        }),
-                        right_block[row_idx][col_idx].clone(),
-                        q[row_idx][col_idx],
-                    )?;
+                for row_idx in 0..DCTQ_BLOCK_SIZE {
+                    for col_idx in 0..DCTQ_BLOCK_SIZE {
+                        allocate_scaled_output(
+                            &mut cs.namespace(|| {
+                                format!(
+                                    "channel_{channel_idx}_block_row_{block_row_idx}_block_{block_idx}_dctq_r_{row_idx}_c_{col_idx}"
+                                )
+                            }),
+                            right_block[row_idx][col_idx].clone(),
+                            q[row_idx][col_idx],
+                        )?;
+                    }
                 }
             }
         }
@@ -356,6 +361,31 @@ fn pack_chunk_allocated<CS: ConstraintSystem<Scalar>>(
     );
 
     Ok(packed_chunk)
+}
+
+fn reduce_row_hashes_64_allocated<CS: ConstraintSystem<Scalar>>(
+    cs: &mut CS,
+    row_hashes: &[AllocatedNum<Scalar>; DCTQ_STEP_ROWS],
+) -> Result<AllocatedNum<Scalar>, SynthesisError> {
+    let group_hashes = row_hashes
+        .chunks_exact(8)
+        .enumerate()
+        .map(|(group_idx, group)| {
+            let group_array: [AllocatedNum<Scalar>; 8] = group
+                .to_vec()
+                .try_into()
+                .expect("group size is fixed at 8 row hashes");
+            poseidon_hash_8_allocated(
+                &mut cs.namespace(|| format!("row_hash_group_{group_idx}")),
+                &group_array,
+            )
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let group_hashes: [AllocatedNum<Scalar>; STEP_DIGEST_GROUPS] = group_hashes
+        .try_into()
+        .expect("64 row hashes always reduce to 8 Poseidon8 group digests");
+
+    poseidon_hash_8_allocated(&mut cs.namespace(|| "row_hash_root"), &group_hashes)
 }
 
 fn allocate_linear_combination_output<CS: ConstraintSystem<Scalar>, const N: usize>(

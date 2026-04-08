@@ -186,7 +186,7 @@ mod tests {
     use crate::{
         circuit::PreparedStep,
         hash::{pack_pixel, step_digest},
-        input::DctqStep,
+        input::{DCTQ_HD_WIDTH, DCTQ_STEP_ROWS, DctqStep},
     };
     use nova_snark::{
         frontend::{
@@ -201,7 +201,7 @@ mod tests {
     };
 
     fn synthetic_step(seed: u8) -> DctqStep {
-        let mut step = [[[0u8; 3]; 160]; 8];
+        let mut step = [[[0u8; 3]; DCTQ_HD_WIDTH]; DCTQ_STEP_ROWS];
         step[0][0] = [seed, seed.wrapping_add(1), seed.wrapping_add(2)];
         step[1][1] = [
             seed.wrapping_add(3),
@@ -260,7 +260,7 @@ mod tests {
     fn step_digest_changes_when_pixel_changes() {
         let mut step = synthetic_step(3);
         let before = step_digest(&step);
-        step[7][159] = [1, 2, 3];
+        step[DCTQ_STEP_ROWS - 1][DCTQ_HD_WIDTH - 1] = [1, 2, 3];
         let after = step_digest(&step);
         assert_ne!(before, after);
         assert_ne!(pack_pixel([1, 2, 3]), pack_pixel([1, 2, 4]));

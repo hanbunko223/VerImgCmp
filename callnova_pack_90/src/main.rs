@@ -230,7 +230,7 @@ fn run() -> Result<(), ProverError> {
         .collect::<Vec<_>>();
 
     let artifact = RecursiveProofArtifact::<NativeRecursiveSNARK> {
-        backend: "neutron-v4".to_string(),
+        backend: "neutron-pack-90".to_string(),
         proof_kind: "recursive".to_string(),
         function: selected_function.to_string(),
         resolution: resolution.to_string(),

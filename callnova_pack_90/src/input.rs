@@ -4,7 +4,7 @@ use thiserror::Error;
 
 pub const DCTQ_HD_ROWS: usize = 5760;
 pub const DCTQ_HD_WIDTH: usize = 160;
-pub const DCTQ_STEP_ROWS: usize = 8;
+pub const DCTQ_STEP_ROWS: usize = 64;
 pub const DCTQ_HD_STEP_COUNT: usize = DCTQ_HD_ROWS / DCTQ_STEP_ROWS;
 
 pub type Pixel = [u8; 3];
@@ -102,7 +102,7 @@ impl DctqInput {
             .chunks_exact(DCTQ_STEP_ROWS)
             .map(|rows| {
                 rows.try_into()
-                    .expect("validated HD input always splits into 8-row steps")
+                    .expect("validated HD input always splits into 64-row steps")
             })
             .collect()
     }

@@ -18,7 +18,7 @@ pub const DCTQ_CHANNELS: usize = 3;
 pub const DCTQ_BLOCKS_PER_STEP: usize = DCTQ_HD_WIDTH / DCTQ_BLOCK_SIZE;
 
 #[cfg_attr(not(test), allow(dead_code))]
-pub type ChannelPlane = [[Scalar; DCTQ_HD_WIDTH]; DCTQ_STEP_ROWS];
+pub type ChannelPlane = Vec<[Scalar; DCTQ_HD_WIDTH]>;
 pub type BlockMatrix = [[Scalar; DCTQ_BLOCK_SIZE]; DCTQ_BLOCK_SIZE];
 
 static DCTQ_MATRICES: OnceLock<Result<DctqMatrices, DctqError>> = OnceLock::new();
@@ -89,55 +89,65 @@ pub fn dctq_matrices() -> Result<&'static DctqMatrices, DctqError> {
 #[cfg_attr(not(test), allow(dead_code))]
 pub fn split_step_channels(step: &DctqStep) -> [ChannelPlane; DCTQ_CHANNELS] {
     std::array::from_fn(|channel_idx| {
-        std::array::from_fn(|row_idx| {
-            std::array::from_fn(|col_idx| Scalar::from(u64::from(step[row_idx][col_idx][channel_idx])))
-        })
+        step.iter()
+            .map(|row| {
+                std::array::from_fn(|col_idx| Scalar::from(u64::from(row[col_idx][channel_idx])))
+            })
+            .collect()
     })
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
 pub fn dct_left_plane(plane: &ChannelPlane) -> Result<ChannelPlane, DctqError> {
     let d = &dctq_matrices()?.d_signed;
-    Ok(std::array::from_fn(|row_idx| {
-        std::array::from_fn(|col_idx| {
-            let out_r = row_idx % DCTQ_BLOCK_SIZE;
-            let block_col = (col_idx / DCTQ_BLOCK_SIZE) * DCTQ_BLOCK_SIZE;
-            let sum = (0..DCTQ_BLOCK_SIZE).fold(0i128, |acc, k| {
-                let input = scalar_to_i128(plane[k][block_col + (col_idx % DCTQ_BLOCK_SIZE)]);
-                acc + input * i128::from(d[out_r][k])
-            });
-            i128_to_scalar(sum).expect("DCT left output fits in the field")
+    Ok((0..DCTQ_STEP_ROWS)
+        .map(|row_idx| {
+            std::array::from_fn(|col_idx| {
+                let block_row = (row_idx / DCTQ_BLOCK_SIZE) * DCTQ_BLOCK_SIZE;
+                let out_r = row_idx % DCTQ_BLOCK_SIZE;
+                let block_col = (col_idx / DCTQ_BLOCK_SIZE) * DCTQ_BLOCK_SIZE;
+                let local_col = col_idx % DCTQ_BLOCK_SIZE;
+                let sum = (0..DCTQ_BLOCK_SIZE).fold(0i128, |acc, k| {
+                    let input = scalar_to_i128(plane[block_row + k][block_col + local_col]);
+                    acc + input * i128::from(d[out_r][k])
+                });
+                i128_to_scalar(sum).expect("DCT left output fits in the field")
+            })
         })
-    }))
+        .collect())
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
 pub fn dct_right_plane(left: &ChannelPlane) -> Result<ChannelPlane, DctqError> {
     let d = &dctq_matrices()?.d_signed;
-    Ok(std::array::from_fn(|row_idx| {
-        std::array::from_fn(|col_idx| {
-            let block_col = (col_idx / DCTQ_BLOCK_SIZE) * DCTQ_BLOCK_SIZE;
-            let out_c = col_idx % DCTQ_BLOCK_SIZE;
-            let sum = (0..DCTQ_BLOCK_SIZE).fold(0i128, |acc, k| {
-                let input = scalar_to_i128(left[row_idx][block_col + k]);
-                acc + input * i128::from(d[k][out_c])
-            });
-            i128_to_scalar(sum).expect("DCT right output fits in the field")
+    Ok((0..DCTQ_STEP_ROWS)
+        .map(|row_idx| {
+            std::array::from_fn(|col_idx| {
+                let block_col = (col_idx / DCTQ_BLOCK_SIZE) * DCTQ_BLOCK_SIZE;
+                let out_c = col_idx % DCTQ_BLOCK_SIZE;
+                let sum = (0..DCTQ_BLOCK_SIZE).fold(0i128, |acc, k| {
+                    let input = scalar_to_i128(left[row_idx][block_col + k]);
+                    acc + input * i128::from(d[k][out_c])
+                });
+                i128_to_scalar(sum).expect("DCT right output fits in the field")
+            })
         })
-    }))
+        .collect())
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
 pub fn hadamard_q_plane(right: &ChannelPlane) -> Result<ChannelPlane, DctqError> {
     let q = &dctq_matrices()?.q_signed;
-    Ok(std::array::from_fn(|row_idx| {
-        std::array::from_fn(|col_idx| {
-            let qr = row_idx % DCTQ_BLOCK_SIZE;
-            let qc = col_idx % DCTQ_BLOCK_SIZE;
-            let value = scalar_to_i128(right[row_idx][col_idx]) * i128::from(q[qr][qc]);
-            i128_to_scalar(value).expect("Hadamard output fits in the field")
+    Ok((0..DCTQ_STEP_ROWS)
+        .map(|row_idx| {
+            std::array::from_fn(|col_idx| {
+                let qr = row_idx % DCTQ_BLOCK_SIZE;
+                let qc = col_idx % DCTQ_BLOCK_SIZE;
+                let value = scalar_to_i128(right[row_idx][col_idx]) * i128::from(q[qr][qc]);
+                i128_to_scalar(value).expect("Hadamard output fits in the field")
+            })
         })
-    }))
+        .collect())
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
@@ -145,10 +155,10 @@ pub fn compute_dctq_planes(step: &DctqStep) -> Result<[ChannelPlane; DCTQ_CHANNE
     let channels = split_step_channels(step);
     let planes = (0..DCTQ_CHANNELS)
         .map(|channel_idx| {
-        let left = dct_left_plane(&channels[channel_idx])?;
-        let right = dct_right_plane(&left)?;
-        hadamard_q_plane(&right)
-    })
+            let left = dct_left_plane(&channels[channel_idx])?;
+            let right = dct_right_plane(&left)?;
+            hadamard_q_plane(&right)
+        })
         .collect::<Result<Vec<_>, _>>()?;
     Ok(planes.try_into().expect("fixed channel count"))
 }
@@ -279,12 +289,20 @@ mod tests {
         })
     }
 
-    fn manual_first_block_entry(step: &DctqStep, channel_idx: usize, out_r: usize, out_c: usize) -> i128 {
+    fn manual_block_entry(
+        step: &DctqStep,
+        channel_idx: usize,
+        global_row: usize,
+        out_c: usize,
+    ) -> i128 {
         let matrices = dctq_matrices().unwrap();
+        let block_row = (global_row / DCTQ_BLOCK_SIZE) * DCTQ_BLOCK_SIZE;
+        let out_r = global_row % DCTQ_BLOCK_SIZE;
         let mut left_row = [0i128; DCTQ_BLOCK_SIZE];
         for c in 0..DCTQ_BLOCK_SIZE {
             left_row[c] = (0..DCTQ_BLOCK_SIZE).fold(0i128, |acc, k| {
-                acc + i128::from(step[k][c][channel_idx]) * i128::from(matrices.d_signed[out_r][k])
+                acc + i128::from(step[block_row + k][c][channel_idx])
+                    * i128::from(matrices.d_signed[out_r][k])
             });
         }
         let right = (0..DCTQ_BLOCK_SIZE).fold(0i128, |acc, k| {
@@ -306,7 +324,10 @@ mod tests {
         let step = synthetic_step();
         let channels = split_step_channels(&step);
         assert_eq!(channels[0][0][0], Scalar::from(u64::from(step[0][0][0])));
-        assert_eq!(channels[2][7][159], Scalar::from(u64::from(step[7][159][2])));
+        assert_eq!(
+            channels[2][DCTQ_STEP_ROWS - 1][159],
+            Scalar::from(u64::from(step[DCTQ_STEP_ROWS - 1][159][2]))
+        );
     }
 
     #[test]
@@ -317,8 +338,21 @@ mod tests {
         let right = dct_right_plane(&left).unwrap();
         let final_plane = hadamard_q_plane(&right).unwrap();
 
-        let expected = manual_first_block_entry(&step, 0, 2, 5);
+        let expected = manual_block_entry(&step, 0, 2, 5);
         assert_eq!(final_plane[2][5], i128_to_scalar(expected).unwrap());
+    }
+
+    #[test]
+    fn dctq_host_pipeline_matches_manual_entry_in_later_vertical_slab() {
+        let step = synthetic_step();
+        let channels = split_step_channels(&step);
+        let left = dct_left_plane(&channels[1]).unwrap();
+        let right = dct_right_plane(&left).unwrap();
+        let final_plane = hadamard_q_plane(&right).unwrap();
+
+        let target_row = DCTQ_BLOCK_SIZE + 3;
+        let expected = manual_block_entry(&step, 1, target_row, 6);
+        assert_eq!(final_plane[target_row][6], i128_to_scalar(expected).unwrap());
     }
 
     #[test]
