@@ -199,14 +199,7 @@ fn run() -> Result<(), ProverError> {
     let output_path = PathBuf::from(matches.value_of("output").unwrap());
     let selected_function = matches.value_of("function").unwrap();
     let resolution = matches.value_of("resolution").unwrap();
-
-    println!(" ________________________________________________________");
-    println!("                                                         ");
-    println!(" ██     ██  ██  ███    ███  ████████   Verifiable  Image");
-    println!(" ██     ██  ██  ████  ████      ███    Manipulation from");
-    println!("  ██   ██   ██  ██ ████ ██     ██      Folded   zkSNARKs");
-    println!("   ██ ██    ██  ██  ██  ██   ███                         ");
-    println!("    ███     ██  ██      ██  ████████████ v1.3.0 ████████");
+    
     println!(" ________________________________________________________");
     println!("| Input file: {}", input_path.display());
     println!("| Output file: {}", output_path.display());
