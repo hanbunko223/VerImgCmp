@@ -34,7 +34,6 @@ fn print_neutron_timing_summary(
 ) {
     let timing = snapshot_recursive_timing();
     let prove_step_s = timing.neutron_prove_step_total;
-    let others_s = (recursive_creation_s - frontend_prepare_s - prove_step_s).max(0.0);
     let extract_other_s = (timing.neutron_extract_instance_witness - timing.commit_w).max(0.0);
 
     println!();
@@ -51,7 +50,6 @@ fn print_neutron_timing_summary(
         frontend_prepare_s
     );
     println!("| prove_step                    | {:>11.6} |", prove_step_s);
-    println!("| others                        | {:>11.6} |", others_s);
     println!("+-------------------------------+-------------+");
     println!();
     println!("prove_step breakdown (sum over all folded steps):");
