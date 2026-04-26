@@ -1,16 +1,15 @@
 use crate::{
-    dctq::{DCTQ_BLOCK_SIZE, DCTQ_BLOCKS_PER_STEP, DCTQ_CHANNELS, d_matrix, q_matrix},
+    dctq::{d_matrix, q_matrix, DCTQ_BLOCKS_PER_STEP, DCTQ_BLOCK_SIZE, DCTQ_CHANNELS},
     hash::{
-        PACKED_CHUNKS_PER_ROW, PackedPixelsStep, PIXELS_PER_CHUNK, Scalar,
-        STEP_DIGEST_GROUPS, pack_step_chunks, pack_step_pixels, row_hashes_from_chunks,
-        shift24_powers, step_digest,
+        pack_step_chunks, pack_step_pixels, row_hashes_from_chunks, shift24_powers, step_digest,
+        PackedPixelsStep, Scalar, PACKED_CHUNKS_PER_ROW, PIXELS_PER_CHUNK, STEP_DIGEST_GROUPS,
     },
-    input::{DCTQ_HD_WIDTH, DCTQ_STEP_ROWS, DctqStep, Pixel},
+    input::{DctqStep, Pixel, DCTQ_HD_WIDTH, DCTQ_STEP_ROWS},
     poseidon::{poseidon_hash_2_allocated, poseidon_hash_8_allocated},
 };
 use ff::{Field, PrimeField};
 use nova_snark::{
-    frontend::{AllocatedBit, ConstraintSystem, SynthesisError, num::AllocatedNum},
+    frontend::{num::AllocatedNum, AllocatedBit, ConstraintSystem, SynthesisError},
     traits::circuit::StepCircuit,
 };
 use std::sync::Arc;
@@ -101,7 +100,10 @@ impl StepCircuit<Scalar> for DctqStepCircuit {
                     })
                     .collect::<Result<Vec<_>, _>>()?;
 
-                debug_assert_eq!(packed_pixels.len(), self.prepared.packed_pixels[row_idx].len());
+                debug_assert_eq!(
+                    packed_pixels.len(),
+                    self.prepared.packed_pixels[row_idx].len()
+                );
                 let packed_chunks = packed_pixels
                     .chunks_exact(PIXELS_PER_CHUNK)
                     .enumerate()
@@ -136,10 +138,10 @@ impl StepCircuit<Scalar> for DctqStepCircuit {
                     [left_hash, right_hash],
                 )?;
 
-                let expected_row_hash =
-                    AllocatedNum::alloc(cs.namespace(|| format!("expected_row_hash_{row_idx}")), || {
-                        Ok(self.prepared.row_hashes[row_idx])
-                    })?;
+                let expected_row_hash = AllocatedNum::alloc(
+                    cs.namespace(|| format!("expected_row_hash_{row_idx}")),
+                    || Ok(self.prepared.row_hashes[row_idx]),
+                )?;
                 enforce_equal(
                     &mut cs.namespace(|| format!("row_hash_matches_prepared_{row_idx}")),
                     &row_hash,
@@ -154,10 +156,8 @@ impl StepCircuit<Scalar> for DctqStepCircuit {
             .try_into()
             .expect("prepared step always hashes exactly 64 rows");
 
-        let digest_allocated = reduce_row_hashes_64_allocated(
-            &mut cs.namespace(|| "step_digest"),
-            &row_hash_array,
-        )?;
+        let digest_allocated =
+            reduce_row_hashes_64_allocated(&mut cs.namespace(|| "step_digest"), &row_hash_array)?;
 
         let expected_step_digest =
             AllocatedNum::alloc(cs.namespace(|| "expected_step_digest"), || {
@@ -308,9 +308,15 @@ fn pack_pixel_allocated<CS: ConstraintSystem<Scalar>>(
     channels: [AllocatedNum<Scalar>; 3],
 ) -> Result<AllocatedNum<Scalar>, SynthesisError> {
     let packed = AllocatedNum::alloc(cs.namespace(|| "packed_pixel"), || {
-        let r = channels[0].get_value().ok_or(SynthesisError::AssignmentMissing)?;
-        let g = channels[1].get_value().ok_or(SynthesisError::AssignmentMissing)?;
-        let b = channels[2].get_value().ok_or(SynthesisError::AssignmentMissing)?;
+        let r = channels[0]
+            .get_value()
+            .ok_or(SynthesisError::AssignmentMissing)?;
+        let g = channels[1]
+            .get_value()
+            .ok_or(SynthesisError::AssignmentMissing)?;
+        let b = channels[2]
+            .get_value()
+            .ok_or(SynthesisError::AssignmentMissing)?;
         Ok(r + (g * Scalar::from(256u64)) + (b * Scalar::from(65_536u64)))
     })?;
 
@@ -487,8 +493,11 @@ mod tests {
     #[test]
     fn byte_range_check_rejects_out_of_range_witness() {
         let mut shape_cs: ShapeCS<PallasEngine> = ShapeCS::new();
-        allocate_scalar_with_byte_range_check(&mut shape_cs.namespace(|| "shape_byte"), Scalar::ZERO)
-            .unwrap();
+        allocate_scalar_with_byte_range_check(
+            &mut shape_cs.namespace(|| "shape_byte"),
+            Scalar::ZERO,
+        )
+        .unwrap();
         let shape = shape_cs.r1cs_shape().unwrap();
         let ck = R1CSShape::commitment_key(&[&shape], &[&*default_ck_hint()]).unwrap();
 

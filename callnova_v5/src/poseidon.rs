@@ -1,10 +1,9 @@
 use nova_snark::{
-    frontend::{
-        ConstraintSystem, Elt, PoseidonConstants, SynthesisError, SpongeCircuit,
-        num::AllocatedNum,
-    },
     frontend::gadgets::poseidon::{
         IOPattern, Simplex, Sponge, SpongeAPI, SpongeOp, SpongeTrait, Strength,
+    },
+    frontend::{
+        num::AllocatedNum, ConstraintSystem, Elt, PoseidonConstants, SpongeCircuit, SynthesisError,
     },
     provider::PallasEngine,
     traits::Engine,
@@ -48,7 +47,11 @@ pub fn poseidon_hash_8_allocated<CS: ConstraintSystem<Scalar>>(
         SpongeCircuit::new_with_constants(hash8_constants(), Simplex);
     let input_elts = inputs.iter().cloned().map(Elt::from).collect::<Vec<_>>();
     let mut sponge_cs = cs.namespace(|| "poseidon_hash_8_sponge");
-    sponge.start(hash8_pattern(), Some(HASH8_DOMAIN_SEPARATOR), &mut sponge_cs);
+    sponge.start(
+        hash8_pattern(),
+        Some(HASH8_DOMAIN_SEPARATOR),
+        &mut sponge_cs,
+    );
     sponge.absorb(HASH8_INPUTS as u32, &input_elts, &mut sponge_cs);
     let digest = SpongeAPI::squeeze(&mut sponge, 1, &mut sponge_cs)
         .into_iter()
@@ -83,7 +86,11 @@ pub fn poseidon_hash_2_allocated<CS: ConstraintSystem<Scalar>>(
         SpongeCircuit::new_with_constants(hash2_constants(), Simplex);
     let input_elts = inputs.into_iter().map(Elt::from).collect::<Vec<_>>();
     let mut sponge_cs = cs.namespace(|| "poseidon_hash_2_sponge");
-    sponge.start(hash2_pattern(), Some(HASH2_DOMAIN_SEPARATOR), &mut sponge_cs);
+    sponge.start(
+        hash2_pattern(),
+        Some(HASH2_DOMAIN_SEPARATOR),
+        &mut sponge_cs,
+    );
     sponge.absorb(HASH2_INPUTS as u32, &input_elts, &mut sponge_cs);
     let digest = SpongeAPI::squeeze(&mut sponge, 1, &mut sponge_cs)
         .into_iter()
@@ -113,11 +120,17 @@ fn hash2_constants() -> &'static PoseidonConstants<Scalar, Hash2Arity> {
 }
 
 fn hash8_pattern() -> IOPattern {
-    IOPattern(vec![SpongeOp::Absorb(HASH8_INPUTS as u32), SpongeOp::Squeeze(1)])
+    IOPattern(vec![
+        SpongeOp::Absorb(HASH8_INPUTS as u32),
+        SpongeOp::Squeeze(1),
+    ])
 }
 
 fn hash2_pattern() -> IOPattern {
-    IOPattern(vec![SpongeOp::Absorb(HASH2_INPUTS as u32), SpongeOp::Squeeze(1)])
+    IOPattern(vec![
+        SpongeOp::Absorb(HASH2_INPUTS as u32),
+        SpongeOp::Squeeze(1),
+    ])
 }
 
 #[cfg(test)]
@@ -149,9 +162,10 @@ mod tests {
 
         let mut shape_cs: ShapeCS<PallasEngine> = ShapeCS::new();
         let allocated_shape = std::array::from_fn(|idx| {
-            AllocatedNum::alloc_infallible(shape_cs.namespace(|| format!("shape_input_{idx}")), || {
-                Scalar::from((idx + 1) as u64)
-            })
+            AllocatedNum::alloc_infallible(
+                shape_cs.namespace(|| format!("shape_input_{idx}")),
+                || Scalar::from((idx + 1) as u64),
+            )
         });
         poseidon_hash_8_allocated(&mut shape_cs, &allocated_shape).unwrap();
         let shape = shape_cs.r1cs_shape().unwrap();
@@ -178,9 +192,10 @@ mod tests {
 
         let mut shape_cs: ShapeCS<PallasEngine> = ShapeCS::new();
         let allocated_shape = std::array::from_fn(|idx| {
-            AllocatedNum::alloc_infallible(shape_cs.namespace(|| format!("shape_input_{idx}")), || {
-                inputs[idx]
-            })
+            AllocatedNum::alloc_infallible(
+                shape_cs.namespace(|| format!("shape_input_{idx}")),
+                || inputs[idx],
+            )
         });
         poseidon_hash_2_allocated(&mut shape_cs, allocated_shape).unwrap();
         let shape = shape_cs.r1cs_shape().unwrap();

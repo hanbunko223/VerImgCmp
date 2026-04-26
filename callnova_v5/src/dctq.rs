@@ -1,6 +1,4 @@
-use crate::{
-    input::{DCTQ_HD_WIDTH, DCTQ_STEP_ROWS, DctqStep},
-};
+use crate::input::{DctqStep, DCTQ_HD_WIDTH, DCTQ_STEP_ROWS};
 use ff::PrimeField;
 use nova_snark::{provider::PallasEngine, traits::Engine};
 use std::{
@@ -37,15 +35,9 @@ type BlockIntMatrix = [[i64; DCTQ_BLOCK_SIZE]; DCTQ_BLOCK_SIZE];
 #[derive(Debug, Error, Clone)]
 pub enum DctqError {
     #[error("failed to open DCTQ matrix file {path}: {message}")]
-    Open {
-        path: String,
-        message: String,
-    },
+    Open { path: String, message: String },
     #[error("failed to read DCTQ matrix file {path}: {message}")]
-    Read {
-        path: String,
-        message: String,
-    },
+    Read { path: String, message: String },
     #[error("invalid DCTQ matrix row count in {path}: expected {expected}, got {actual}")]
     InvalidRowCount {
         path: String,
@@ -59,7 +51,9 @@ pub enum DctqError {
         expected: usize,
         actual: usize,
     },
-    #[error("failed to parse DCTQ matrix entry in {path} at row {row_index}, col {col_index}: {value}")]
+    #[error(
+        "failed to parse DCTQ matrix entry in {path} at row {row_index}, col {col_index}: {value}"
+    )]
     ParseEntry {
         path: String,
         row_index: usize,
@@ -155,10 +149,10 @@ pub fn compute_dctq_planes(step: &DctqStep) -> Result<[ChannelPlane; DCTQ_CHANNE
     let channels = split_step_channels(step);
     let planes = (0..DCTQ_CHANNELS)
         .map(|channel_idx| {
-        let left = dct_left_plane(&channels[channel_idx])?;
-        let right = dct_right_plane(&left)?;
-        hadamard_q_plane(&right)
-    })
+            let left = dct_left_plane(&channels[channel_idx])?;
+            let right = dct_right_plane(&left)?;
+            hadamard_q_plane(&right)
+        })
         .collect::<Result<Vec<_>, _>>()?;
     Ok(planes.try_into().expect("fixed channel count"))
 }
@@ -218,12 +212,13 @@ fn load_matrix_file(path: &Path) -> Result<BlockIntMatrix, DctqError> {
             });
         }
         for (col_index, entry) in entries.iter().enumerate() {
-            matrix[row_index][col_index] = entry.parse::<i64>().map_err(|_| DctqError::ParseEntry {
-                path: path.display().to_string(),
-                row_index,
-                col_index,
-                value: (*entry).to_string(),
-            })?;
+            matrix[row_index][col_index] =
+                entry.parse::<i64>().map_err(|_| DctqError::ParseEntry {
+                    path: path.display().to_string(),
+                    row_index,
+                    col_index,
+                    value: (*entry).to_string(),
+                })?;
         }
     }
 
@@ -352,13 +347,19 @@ mod tests {
 
         let target_row = DCTQ_BLOCK_SIZE + 3;
         let expected = manual_block_entry(&step, 1, target_row, 6);
-        assert_eq!(final_plane[target_row][6], i128_to_scalar(expected).unwrap());
+        assert_eq!(
+            final_plane[target_row][6],
+            i128_to_scalar(expected).unwrap()
+        );
     }
 
     #[test]
     fn dctq_host_pipeline_is_deterministic() {
         let step = synthetic_step();
-        assert_eq!(compute_dctq_planes(&step).unwrap(), compute_dctq_planes(&step).unwrap());
+        assert_eq!(
+            compute_dctq_planes(&step).unwrap(),
+            compute_dctq_planes(&step).unwrap()
+        );
     }
 
     #[test]

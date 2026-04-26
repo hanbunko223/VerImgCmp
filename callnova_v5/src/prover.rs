@@ -1,15 +1,17 @@
 use crate::{
     circuit::{DctqStepCircuit, PreparedStep},
-    dctq::{DctqError, dctq_matrices},
-    hash::{Scalar, chain_hash},
-    input::{DCTQ_HD_STEP_COUNT, DctqInput, InputError},
+    dctq::{dctq_matrices, DctqError},
+    hash::{chain_hash, Scalar},
+    input::{resolution_spec, DctqInput, InputError, ResolutionSpec},
 };
 use ff::Field;
 use nova_snark::{
-    neutron::{PublicParams, RecursiveSNARK},
+    neutron::{decider::CompressedSNARK as NeutronCompressedSNARK, PublicParams, RecursiveSNARK},
+    provider::ipa_pc::EvaluationEngine,
     provider::{PallasEngine, VestaEngine},
+    spartan::snark::RelaxedR1CSSNARK as SpartanRelaxedR1CSSNARK,
     timing::reset_recursive_timing,
-    traits::{Engine, snark::default_ck_hint},
+    traits::{snark::default_ck_hint, Engine},
 };
 use std::{path::Path, time::Instant};
 use thiserror::Error;
@@ -17,8 +19,16 @@ use thiserror::Error;
 pub type PrimaryEngine = PallasEngine;
 pub type SecondaryEngine = VestaEngine;
 pub type NativePublicParams = PublicParams<PrimaryEngine, SecondaryEngine, DctqStepCircuit>;
-pub type NativeRecursiveSNARK =
-    RecursiveSNARK<PrimaryEngine, SecondaryEngine, DctqStepCircuit>;
+pub type NativeRecursiveSNARK = RecursiveSNARK<PrimaryEngine, SecondaryEngine, DctqStepCircuit>;
+type SpartanEvaluationEngine<E> = EvaluationEngine<E>;
+type SpartanSNARK<E> = SpartanRelaxedR1CSSNARK<E, SpartanEvaluationEngine<E>>;
+type SpartanCompressedSNARK = NeutronCompressedSNARK<
+    PrimaryEngine,
+    SecondaryEngine,
+    DctqStepCircuit,
+    SpartanEvaluationEngine<PrimaryEngine>,
+    SpartanSNARK<PrimaryEngine>,
+>;
 
 #[derive(Debug, Error)]
 pub enum ProverError {
@@ -30,11 +40,11 @@ pub enum ProverError {
     Nova(#[from] nova_snark::errors::NovaError),
     #[error("{0}")]
     Configuration(String),
-    #[error("this native callnova branch currently supports only `dctq`")]
+    #[error("this native callnova v5 branch currently supports only `dctq`")]
     UnsupportedFunction,
-    #[error("this native callnova branch currently supports only `HD`, got {0}")]
+    #[error("this native callnova v5 branch does not support resolution {0}")]
     UnsupportedResolution(String),
-    #[error("expected {expected} HD steps, got {actual}")]
+    #[error("expected {expected} steps, got {actual}")]
     InvalidStepCount { expected: usize, actual: usize },
     #[error("native proof final output mismatch")]
     FinalOutputMismatch,
@@ -51,47 +61,35 @@ pub struct ProvingResult {
     pub verify_s: f64,
 }
 
-pub fn prove(
-    input_path: &Path,
+pub struct SpartanCompressionResult {
+    pub proof_json_bytes: usize,
+    pub setup_s: f64,
+    pub compression_s: f64,
+    pub verify_s: f64,
+    pub final_outputs: Vec<Scalar>,
+}
+
+fn validate_mode(
     selected_function: &str,
     resolution: &str,
-) -> Result<ProvingResult, ProverError> {
+) -> Result<&'static ResolutionSpec, ProverError> {
     if selected_function != "dctq" {
         return Err(ProverError::UnsupportedFunction);
     }
-    if resolution != "HD" {
-        return Err(ProverError::UnsupportedResolution(resolution.to_string()));
-    }
+    resolution_spec(resolution)
+        .ok_or_else(|| ProverError::UnsupportedResolution(resolution.to_string()))
+}
 
-    println!(
-        "Running NeutronNova with native Rust packed-byte frontend plus internal DCTQ checks and engine: {}",
-        std::any::type_name::<PrimaryEngine>()
-    );
-    println!(
-        "Warning: using experimental NeutronNova backend from local nova60/Nova; this branch enforces byte range checks, internal DCTQ linear layers, and packed hashing without a compressed proof."
-    );
-
-    let _ = dctq_matrices()?;
-
-    let pp_start = Instant::now();
-    let template_circuit = DctqStepCircuit::new(PreparedStep::zero());
-    let pp = NativePublicParams::setup(
-        &template_circuit,
-        &*default_ck_hint(),
-        &*default_ck_hint(),
-    )?;
-    let pp_s = pp_start.elapsed().as_secs_f64();
-    println!("Creating keys from native step circuit took {:.3}s", pp_s);
-
-    reset_recursive_timing();
-    let recursive_start = Instant::now();
-
+fn prepare_dctq_circuits(
+    input_path: &Path,
+    spec: &ResolutionSpec,
+) -> Result<(Vec<DctqStepCircuit>, Scalar, f64), ProverError> {
     let frontend_start = Instant::now();
-    let input = DctqInput::load(input_path)?;
+    let input = DctqInput::load(input_path, spec)?;
     let steps = input.into_steps();
-    if steps.len() != DCTQ_HD_STEP_COUNT {
+    if steps.len() != spec.step_count {
         return Err(ProverError::InvalidStepCount {
-            expected: DCTQ_HD_STEP_COUNT,
+            expected: spec.step_count,
             actual: steps.len(),
         });
     }
@@ -108,31 +106,64 @@ pub fn prove(
         .into_iter()
         .map(DctqStepCircuit::new)
         .collect::<Vec<_>>();
-    let frontend_prepare_s = frontend_start.elapsed().as_secs_f64();
+    Ok((
+        circuits,
+        expected_final,
+        frontend_start.elapsed().as_secs_f64(),
+    ))
+}
+
+pub fn prove(
+    input_path: &Path,
+    selected_function: &str,
+    resolution: &str,
+) -> Result<ProvingResult, ProverError> {
+    let spec = validate_mode(selected_function, resolution)?;
+
+    let _ = dctq_matrices()?;
+
+    let pp_start = Instant::now();
+    let template_circuit = DctqStepCircuit::new(PreparedStep::zero());
+    let pp =
+        NativePublicParams::setup(&template_circuit, &*default_ck_hint(), &*default_ck_hint())?;
+    let _pp_s = pp_start.elapsed().as_secs_f64();
+
+    reset_recursive_timing();
+    let recursive_start = Instant::now();
+
+    let (circuits, expected_final, frontend_prepare_s) =
+        prepare_dctq_circuits(input_path, spec)?;
     println!("frontend preparation took {:.3}s", frontend_prepare_s);
 
     let start_public_input = vec![<PrimaryEngine as Engine>::Scalar::ZERO];
 
     println!("Creating a RecursiveSNARK...");
-    let mut recursive_snark =
-        NativeRecursiveSNARK::new(&pp, &circuits[0], &start_public_input)?;
+    let mut recursive_snark = NativeRecursiveSNARK::new(&pp, &circuits[0], &start_public_input)?;
     let overall_steps_start = Instant::now();
     recursive_snark.prove_step(&pp, &circuits[0])?;
-    print_step_progress(1, circuits.len(), overall_steps_start.elapsed(), overall_steps_start);
+    print_step_progress(
+        1,
+        circuits.len(),
+        overall_steps_start.elapsed(),
+        overall_steps_start,
+    );
 
     for (index, circuit) in circuits.iter().enumerate().skip(1) {
         let step_start = Instant::now();
         recursive_snark.prove_step(&pp, circuit)?;
-        print_step_progress(index + 1, circuits.len(), step_start.elapsed(), overall_steps_start);
+        print_step_progress(
+            index + 1,
+            circuits.len(),
+            step_start.elapsed(),
+            overall_steps_start,
+        );
     }
 
     let recursive_creation_s = recursive_start.elapsed().as_secs_f64();
-    println!("RecursiveSNARK creation took {:.3}s", recursive_creation_s);
 
     println!("Verifying a RecursiveSNARK...");
     let verify_start = Instant::now();
-    let final_outputs =
-        recursive_snark.verify(&pp, circuits.len(), &start_public_input)?;
+    let final_outputs = recursive_snark.verify(&pp, circuits.len(), &start_public_input)?;
     let verify_s = verify_start.elapsed().as_secs_f64();
     println!("RecursiveSNARK::verify: true, took {:.3}s", verify_s);
 
@@ -149,6 +180,44 @@ pub fn prove(
         frontend_prepare_s,
         recursive_creation_s,
         verify_s,
+    })
+}
+
+pub fn prove_spartan_compressed(
+    pp: &NativePublicParams,
+    recursive_snark: &NativeRecursiveSNARK,
+    num_steps: usize,
+    start_public_input: &[Scalar],
+) -> Result<SpartanCompressionResult, ProverError> {
+    println!();
+    println!("Running Neutron-native Spartan decider over the final folded NeutronNova state.");
+    let setup_start = Instant::now();
+    let (pk, vk) = SpartanCompressedSNARK::setup(pp)?;
+    let setup_s = setup_start.elapsed().as_secs_f64();
+    println!("Neutron Spartan decider setup took {:.3}s", setup_s);
+
+    let compression_start = Instant::now();
+    let compressed_snark = SpartanCompressedSNARK::prove(pp, &pk, recursive_snark)?;
+    let compression_s = compression_start.elapsed().as_secs_f64();
+    println!("Neutron Spartan decider prove took {:.3}s", compression_s);
+
+    let proof_json = serde_json::to_vec(&compressed_snark).map_err(|error| {
+        ProverError::Configuration(format!(
+            "failed to serialize Spartan compressed proof: {error}"
+        ))
+    })?;
+    let proof_json_bytes = proof_json.len();
+
+    let verify_start = Instant::now();
+    let final_outputs = compressed_snark.verify(&vk, num_steps, start_public_input)?;
+    let verify_s = verify_start.elapsed().as_secs_f64();
+
+    Ok(SpartanCompressionResult {
+        proof_json_bytes,
+        setup_s,
+        compression_s,
+        verify_s,
+        final_outputs,
     })
 }
 
@@ -186,15 +255,15 @@ mod tests {
     use crate::{
         circuit::PreparedStep,
         hash::{pack_pixel, step_digest},
-        input::{DCTQ_HD_WIDTH, DCTQ_STEP_ROWS, DctqStep},
+        input::{DctqStep, DCTQ_HD_WIDTH, DCTQ_STEP_ROWS},
     };
     use nova_snark::{
         frontend::{
-            ConstraintSystem,
             num::AllocatedNum,
             r1cs::{NovaShape, NovaWitness},
             shape_cs::ShapeCS,
             solver::SatisfyingAssignment,
+            ConstraintSystem,
         },
         r1cs::R1CSShape,
         traits::circuit::StepCircuit,
@@ -236,9 +305,7 @@ mod tests {
         let mut recursive_snark =
             NativeRecursiveSNARK::new(&pp, &circuits[0], &start_public_input).unwrap();
         recursive_snark.prove_step(&pp, &circuits[0]).unwrap();
-        let first_outputs = recursive_snark
-            .verify(&pp, 1, &start_public_input)
-            .unwrap();
+        let first_outputs = recursive_snark.verify(&pp, 1, &start_public_input).unwrap();
         assert_eq!(
             first_outputs,
             vec![chain_hash(&[circuits[0].prepared.step_digest])]

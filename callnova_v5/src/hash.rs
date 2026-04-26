@@ -1,6 +1,6 @@
 use crate::{
-    input::{DCTQ_HD_WIDTH, DCTQ_STEP_ROWS, DctqRow, DctqStep, Pixel},
-    poseidon::{HASH8_INPUTS, poseidon_hash_2, poseidon_hash_8},
+    input::{DctqRow, DctqStep, Pixel, DCTQ_HD_WIDTH, DCTQ_STEP_ROWS},
+    poseidon::{poseidon_hash_2, poseidon_hash_8, HASH8_INPUTS},
 };
 use ff::{Field, PrimeField};
 use nova_snark::{provider::PallasEngine, traits::Engine};
@@ -71,9 +71,7 @@ pub fn pack_step_pixels(step: &DctqStep) -> PackedPixelsStep {
         .expect("step always packs into 64 rows")
 }
 
-pub fn pack_step_chunks(
-    packed_pixels: &[PackedPixelsRow; DCTQ_STEP_ROWS],
-) -> PackedChunksStep {
+pub fn pack_step_chunks(packed_pixels: &[PackedPixelsRow; DCTQ_STEP_ROWS]) -> PackedChunksStep {
     (0..DCTQ_STEP_ROWS)
         .map(|row_idx| pack_row_chunks(&packed_pixels[row_idx]))
         .collect::<Vec<_>>()
@@ -105,9 +103,11 @@ pub fn step_digest(step: &DctqStep) -> Scalar {
 }
 
 pub fn chain_hash(step_digests: &[Scalar]) -> Scalar {
-    step_digests.iter().fold(Scalar::ZERO, |state, step_digest| {
-        poseidon_hash_2([state, *step_digest])
-    })
+    step_digests
+        .iter()
+        .fold(Scalar::ZERO, |state, step_digest| {
+            poseidon_hash_2([state, *step_digest])
+        })
 }
 
 pub fn shift24_powers() -> &'static [Scalar; PIXELS_PER_CHUNK] {
@@ -195,6 +195,9 @@ mod tests {
                 std::array::from_fn(|offset| row_hashes[group_idx * HASH8_INPUTS + offset]);
             poseidon_hash_8(&inputs)
         });
-        assert_eq!(reduce_row_hashes_64(&row_hashes), poseidon_hash_8(&group_hashes));
+        assert_eq!(
+            reduce_row_hashes_64(&row_hashes),
+            poseidon_hash_8(&group_hashes)
+        );
     }
 }
