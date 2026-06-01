@@ -1,0 +1,236 @@
+| Image resolution: HD
+| Rayon threads: 8
+| Expected steps: 90
+| Pixels per step: 10240
+frontend preparation took 1.724s
+Creating a RecursiveSNARK...
+  [timer] commit_W(len=524288) took 103.174541ms
+step 1/90: recursive=0.000s, elapsed=0.000s, eta=0.0s
+  [timer] commit_W(len=524288) took 98.22625ms
+step 2/90: recursive=0.232s, elapsed=0.232s, eta=10.2s
+  [timer] commit_W(len=524288) took 98.166667ms
+step 3/90: recursive=0.230s, elapsed=0.462s, eta=13.4s
+  [timer] commit_W(len=524288) took 104.503625ms
+step 4/90: recursive=0.228s, elapsed=0.690s, eta=14.8s
+  [timer] commit_W(len=524288) took 107.5235ms
+step 5/90: recursive=0.231s, elapsed=0.921s, eta=15.7s
+  [timer] commit_W(len=524288) took 103.840875ms
+step 6/90: recursive=0.231s, elapsed=1.152s, eta=16.1s
+  [timer] commit_W(len=524288) took 102.857542ms
+step 7/90: recursive=0.232s, elapsed=1.385s, eta=16.4s
+  [timer] commit_W(len=524288) took 104.626958ms
+step 8/90: recursive=0.235s, elapsed=1.620s, eta=16.6s
+  [timer] commit_W(len=524288) took 105.427584ms
+step 9/90: recursive=0.229s, elapsed=1.849s, eta=16.6s
+  [timer] commit_W(len=524288) took 108.649209ms
+step 10/90: recursive=0.239s, elapsed=2.088s, eta=16.7s
+  [timer] commit_W(len=524288) took 104.762583ms
+step 11/90: recursive=0.245s, elapsed=2.332s, eta=16.7s
+  [timer] commit_W(len=524288) took 105.244041ms
+step 12/90: recursive=0.234s, elapsed=2.567s, eta=16.7s
+  [timer] commit_W(len=524288) took 108.35025ms
+step 13/90: recursive=0.237s, elapsed=2.803s, eta=16.6s
+  [timer] commit_W(len=524288) took 103.107ms
+step 14/90: recursive=0.230s, elapsed=3.033s, eta=16.5s
+  [timer] commit_W(len=524288) took 107.092791ms
+step 15/90: recursive=0.233s, elapsed=3.266s, eta=16.3s
+  [timer] commit_W(len=524288) took 103.535208ms
+step 16/90: recursive=0.233s, elapsed=3.499s, eta=16.2s
+  [timer] commit_W(len=524288) took 103.995208ms
+step 17/90: recursive=0.230s, elapsed=3.730s, eta=16.0s
+  [timer] commit_W(len=524288) took 104.922833ms
+step 18/90: recursive=0.228s, elapsed=3.958s, eta=15.8s
+  [timer] commit_W(len=524288) took 100.694042ms
+step 19/90: recursive=0.233s, elapsed=4.191s, eta=15.7s
+  [timer] commit_W(len=524288) took 104.851458ms
+step 20/90: recursive=0.238s, elapsed=4.430s, eta=15.5s
+  [timer] commit_W(len=524288) took 108.49575ms
+step 21/90: recursive=0.231s, elapsed=4.661s, eta=15.3s
+  [timer] commit_W(len=524288) took 101.739125ms
+step 22/90: recursive=0.229s, elapsed=4.890s, eta=15.1s
+  [timer] commit_W(len=524288) took 100.807667ms
+step 23/90: recursive=0.242s, elapsed=5.132s, eta=14.9s
+  [timer] commit_W(len=524288) took 103.435625ms
+step 24/90: recursive=0.260s, elapsed=5.392s, eta=14.8s
+  [timer] commit_W(len=524288) took 107.003917ms
+step 25/90: recursive=0.236s, elapsed=5.628s, eta=14.6s
+  [timer] commit_W(len=524288) took 104.718667ms
+step 26/90: recursive=0.229s, elapsed=5.857s, eta=14.4s
+  [timer] commit_W(len=524288) took 105.721ms
+step 27/90: recursive=0.231s, elapsed=6.088s, eta=14.2s
+  [timer] commit_W(len=524288) took 111.293792ms
+step 28/90: recursive=0.239s, elapsed=6.327s, eta=14.0s
+  [timer] commit_W(len=524288) took 110.1065ms
+step 29/90: recursive=0.244s, elapsed=6.571s, eta=13.8s
+  [timer] commit_W(len=524288) took 101.762167ms
+step 30/90: recursive=0.234s, elapsed=6.805s, eta=13.6s
+  [timer] commit_W(len=524288) took 102.911291ms
+step 31/90: recursive=0.232s, elapsed=7.037s, eta=13.4s
+  [timer] commit_W(len=524288) took 105.079333ms
+step 32/90: recursive=0.229s, elapsed=7.266s, eta=13.2s
+  [timer] commit_W(len=524288) took 103.746208ms
+step 33/90: recursive=0.232s, elapsed=7.498s, eta=13.0s
+  [timer] commit_W(len=524288) took 104.996584ms
+step 34/90: recursive=0.237s, elapsed=7.734s, eta=12.7s
+  [timer] commit_W(len=524288) took 102.409083ms
+step 35/90: recursive=0.234s, elapsed=7.968s, eta=12.5s
+  [timer] commit_W(len=524288) took 105.336834ms
+step 36/90: recursive=0.239s, elapsed=8.207s, eta=12.3s
+  [timer] commit_W(len=524288) took 99.872291ms
+step 37/90: recursive=0.225s, elapsed=8.432s, eta=12.1s
+  [timer] commit_W(len=524288) took 107.001084ms
+step 38/90: recursive=0.237s, elapsed=8.669s, eta=11.9s
+  [timer] commit_W(len=524288) took 105.189167ms
+step 39/90: recursive=0.233s, elapsed=8.902s, eta=11.6s
+  [timer] commit_W(len=524288) took 103.071ms
+step 40/90: recursive=0.232s, elapsed=9.133s, eta=11.4s
+  [timer] commit_W(len=524288) took 105.623916ms
+step 41/90: recursive=0.230s, elapsed=9.363s, eta=11.2s
+  [timer] commit_W(len=524288) took 102.698417ms
+step 42/90: recursive=0.230s, elapsed=9.593s, eta=11.0s
+  [timer] commit_W(len=524288) took 102.113333ms
+step 43/90: recursive=0.229s, elapsed=9.823s, eta=10.7s
+  [timer] commit_W(len=524288) took 106.595875ms
+step 44/90: recursive=0.237s, elapsed=10.059s, eta=10.5s
+  [timer] commit_W(len=524288) took 105.447334ms
+step 45/90: recursive=0.239s, elapsed=10.299s, eta=10.3s
+  [timer] commit_W(len=524288) took 103.528208ms
+step 46/90: recursive=0.234s, elapsed=10.532s, eta=10.1s
+  [timer] commit_W(len=524288) took 114.481791ms
+step 47/90: recursive=0.242s, elapsed=10.774s, eta=9.9s
+  [timer] commit_W(len=524288) took 99.879833ms
+step 48/90: recursive=0.232s, elapsed=11.006s, eta=9.6s
+  [timer] commit_W(len=524288) took 106.913208ms
+step 49/90: recursive=0.232s, elapsed=11.238s, eta=9.4s
+  [timer] commit_W(len=524288) took 102.198875ms
+step 50/90: recursive=0.232s, elapsed=11.470s, eta=9.2s
+  [timer] commit_W(len=524288) took 103.206834ms
+step 51/90: recursive=0.226s, elapsed=11.696s, eta=8.9s
+  [timer] commit_W(len=524288) took 104.563208ms
+step 52/90: recursive=0.237s, elapsed=11.933s, eta=8.7s
+  [timer] commit_W(len=524288) took 98.885208ms
+step 53/90: recursive=0.226s, elapsed=12.159s, eta=8.5s
+  [timer] commit_W(len=524288) took 105.182916ms
+step 54/90: recursive=0.235s, elapsed=12.394s, eta=8.3s
+  [timer] commit_W(len=524288) took 101.207083ms
+step 55/90: recursive=0.237s, elapsed=12.631s, eta=8.0s
+  [timer] commit_W(len=524288) took 110.821709ms
+step 56/90: recursive=0.238s, elapsed=12.869s, eta=7.8s
+  [timer] commit_W(len=524288) took 100.166208ms
+step 57/90: recursive=0.229s, elapsed=13.098s, eta=7.6s
+  [timer] commit_W(len=524288) took 103.924458ms
+step 58/90: recursive=0.229s, elapsed=13.327s, eta=7.4s
+  [timer] commit_W(len=524288) took 102.03875ms
+step 59/90: recursive=0.224s, elapsed=13.551s, eta=7.1s
+  [timer] commit_W(len=524288) took 104.687833ms
+step 60/90: recursive=0.231s, elapsed=13.782s, eta=6.9s
+  [timer] commit_W(len=524288) took 104.823459ms
+step 61/90: recursive=0.231s, elapsed=14.013s, eta=6.7s
+  [timer] commit_W(len=524288) took 102.036917ms
+step 62/90: recursive=0.235s, elapsed=14.247s, eta=6.4s
+  [timer] commit_W(len=524288) took 105.073417ms
+step 63/90: recursive=0.234s, elapsed=14.481s, eta=6.2s
+  [timer] commit_W(len=524288) took 104.227459ms
+step 64/90: recursive=0.233s, elapsed=14.714s, eta=6.0s
+  [timer] commit_W(len=524288) took 116.282583ms
+step 65/90: recursive=0.246s, elapsed=14.959s, eta=5.8s
+  [timer] commit_W(len=524288) took 101.249667ms
+step 66/90: recursive=0.258s, elapsed=15.217s, eta=5.5s
+  [timer] commit_W(len=524288) took 103.336292ms
+step 67/90: recursive=0.235s, elapsed=15.452s, eta=5.3s
+  [timer] commit_W(len=524288) took 105.242083ms
+step 68/90: recursive=0.231s, elapsed=15.683s, eta=5.1s
+  [timer] commit_W(len=524288) took 99.454ms
+step 69/90: recursive=0.228s, elapsed=15.911s, eta=4.8s
+  [timer] commit_W(len=524288) took 101.9455ms
+step 70/90: recursive=0.227s, elapsed=16.137s, eta=4.6s
+  [timer] commit_W(len=524288) took 102.129584ms
+step 71/90: recursive=0.230s, elapsed=16.367s, eta=4.4s
+  [timer] commit_W(len=524288) took 106.529792ms
+step 72/90: recursive=0.235s, elapsed=16.603s, eta=4.2s
+  [timer] commit_W(len=524288) took 100.197083ms
+step 73/90: recursive=0.227s, elapsed=16.830s, eta=3.9s
+  [timer] commit_W(len=524288) took 103.934ms
+step 74/90: recursive=0.231s, elapsed=17.061s, eta=3.7s
+  [timer] commit_W(len=524288) took 104.754959ms
+step 75/90: recursive=0.236s, elapsed=17.297s, eta=3.5s
+  [timer] commit_W(len=524288) took 98.226875ms
+step 76/90: recursive=0.226s, elapsed=17.523s, eta=3.2s
+  [timer] commit_W(len=524288) took 106.108334ms
+step 77/90: recursive=0.232s, elapsed=17.755s, eta=3.0s
+  [timer] commit_W(len=524288) took 104.236833ms
+step 78/90: recursive=0.232s, elapsed=17.987s, eta=2.8s
+  [timer] commit_W(len=524288) took 110.815541ms
+step 79/90: recursive=0.240s, elapsed=18.227s, eta=2.5s
+  [timer] commit_W(len=524288) took 100.212208ms
+step 80/90: recursive=0.233s, elapsed=18.460s, eta=2.3s
+  [timer] commit_W(len=524288) took 103.355792ms
+step 81/90: recursive=0.232s, elapsed=18.693s, eta=2.1s
+  [timer] commit_W(len=524288) took 104.657666ms
+step 82/90: recursive=0.232s, elapsed=18.924s, eta=1.8s
+  [timer] commit_W(len=524288) took 102.228625ms
+step 83/90: recursive=0.229s, elapsed=19.153s, eta=1.6s
+  [timer] commit_W(len=524288) took 100.986542ms
+step 84/90: recursive=0.244s, elapsed=19.397s, eta=1.4s
+  [timer] commit_W(len=524288) took 105.03ms
+step 85/90: recursive=0.227s, elapsed=19.625s, eta=1.2s
+  [timer] commit_W(len=524288) took 103.294792ms
+step 86/90: recursive=0.232s, elapsed=19.857s, eta=0.9s
+  [timer] commit_W(len=524288) took 103.068375ms
+step 87/90: recursive=0.230s, elapsed=20.087s, eta=0.7s
+  [timer] commit_W(len=524288) took 118.812875ms
+step 88/90: recursive=0.244s, elapsed=20.331s, eta=0.5s
+  [timer] commit_W(len=524288) took 101.442583ms
+step 89/90: recursive=0.230s, elapsed=20.560s, eta=0.2s
+  [timer] commit_W(len=524288) took 104.124208ms
+step 90/90: recursive=0.232s, elapsed=20.793s, eta=0s
+Verifying a RecursiveSNARK...
+RecursiveSNARK::verify: true, took 0.569s
+Recursive proof artifact written to /Users/hanbunko/Downloads/vcvc/vimz/VerImgCmp/output/poseidon/HD-proof-spartan.json
+
+NeutronNova recursive proving summary:
++-------------------------------+-------------+
+| metric                        | time (s)    |
++-------------------------------+-------------+
+| total recursive creation      |   22.657401 |
+| frontend_prepare              |    1.723817 |
+| prove_step                    |   20.754850 |
++-------------------------------+-------------+
+
+prove_step breakdown (sum over all folded steps):
++-------------------------------+-------------+
+| metric                        | time (s)    |
++-------------------------------+-------------+
+| commit_E                      |    0.622278 |
+| multiply_vec_z1               |    3.548364 |
+| multiply_vec_z2               |    3.539512 |
+| prove_helper                  |    3.263978 |
+| poly_finalize                 |    0.023715 |
+| fold_instance                 |    0.061563 |
+| fold_witness                  |    0.302041 |
+| augmented_synthesize          |    3.069404 |
+| commit_W                      |    9.390232 |
+| extract_other                 |    0.303393 |
++-------------------------------+-------------+
+recursive verify: 0.568771s
+
+Running Neutron-native Spartan decider over the final folded NeutronNova state.
+Neutron Spartan decider setup took 1.696s
+  [timer] NeutronCompressedSNARK::prove FoldedSNARK::prove took 33.339270458s
+  [timer] NeutronCompressedSNARK::prove local_snark.prove took 33.4880635s
+Neutron Spartan decider prove took 66.839s
+
+Spartan compressed proof summary:
++-------------------------------+-------------+
+| metric                        | value       |
++-------------------------------+-------------+
+| proof JSON bytes              |       30386 |
+| proof JSON MiB                |    0.028978 |
+| setup                         |    1.696397 |
+| compression prove             |   66.839275 |
+| compressed verify             |    0.994119 |
++-------------------------------+-------------+
+Spartan compressed final outputs: 5082932044263899756476881998000146716498804808311276228389929228271037961879
+TOTAL_PROVER_TIME: 89.496676
+PEAK_RSS_BYTES: 1732739072
+PEAK_RSS_GIB: 1.613739

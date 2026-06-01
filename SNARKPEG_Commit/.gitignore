@@ -1,0 +1,8 @@
+.go-build-cache/
+cmake-build-release/
+data/dctq/*.txt
+!data/
+!data/dctq/
+log/
+output/
+kzh_gnark/zkcnn_kzh_cli

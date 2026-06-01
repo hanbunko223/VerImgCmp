@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Create raw-pixel input JSON for callnova_hash.
+Create raw-pixel input JSON for SNARKPEG_Poseidon.
 
-The step circuit always consumes 64 packed rows x 160 pixels, i.e. 10240 pixels
+The step circuit always consumes 16 packed rows x 160 pixels, i.e. 2560 pixels
 per step. Images are encoded as:
 1. load/resize to the requested resolution,
 2. flatten pixels in raster order,
 3. reshape into logical rows of width 1280,
-4. zero-pad trailing pixels to a multiple of 8 logical rows,
+4. zero-pad trailing pixels to a multiple of 2 logical rows,
 5. split each 1280-wide logical row into 8 packed rows of width 160.
 
 The output wire shape remains:
@@ -20,6 +20,7 @@ The output wire shape remains:
 """
 
 import argparse
+import io
 import json
 import math
 import sys
@@ -32,9 +33,11 @@ from PIL import Image
 
 
 REPO_ROOT = Path(__file__).resolve().parent
+POSEIDON_MATRICES_DIR = REPO_ROOT / "SNARKPEG_Poseidon" / "matrices"
+QMAT_PATH = POSEIDON_MATRICES_DIR / "Qmat.txt"
 LOGICAL_WIDTH = 1280
 PACKED_ROW_WIDTH = 160
-PACKED_ROWS_PER_STEP = 64
+PACKED_ROWS_PER_STEP = 16
 CHUNKS_PER_LOGICAL_ROW = LOGICAL_WIDTH // PACKED_ROW_WIDTH
 LOGICAL_ROWS_PER_STEP = PACKED_ROWS_PER_STEP // CHUNKS_PER_LOGICAL_ROW
 
@@ -153,6 +156,52 @@ def encode_image_to_packed_rows(image_array, resolution):
     return packed_rows, plan
 
 
+def encoded_image_size_bytes(image_array, image_format, **save_kwargs):
+    image = Image.fromarray(image_array, mode="RGB")
+    buffer = io.BytesIO()
+    image.save(buffer, format=image_format, **save_kwargs)
+    return len(buffer.getvalue())
+
+
+def load_qmat_rows():
+    rows = []
+    with open(QMAT_PATH, "r", encoding="utf-8") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if stripped:
+                rows.append([int(entry) for entry in stripped.split()])
+
+    if len(rows) != 8 or any(len(row) != 8 for row in rows):
+        raise ValueError(f"expected an 8x8 quantization matrix in {QMAT_PATH}")
+
+    return rows
+
+
+def derive_jpeg_qtable_from_qmat():
+    qmat_rows = load_qmat_rows()
+    return [
+        255 if entry == 0 else round(1024 / entry)
+        for row in qmat_rows
+        for entry in row
+    ]
+
+
+def jpeg_size_bytes_from_custom_qmat(image_array):
+    qtable = derive_jpeg_qtable_from_qmat()
+    return encoded_image_size_bytes(
+        image_array,
+        "JPEG",
+        qtables=[qtable, qtable, qtable],
+        subsampling=0,
+    )
+
+
+def png_reference_size_bytes(source_path, resized, image_array):
+    if not resized and source_path.suffix.lower() == ".png":
+        return source_path.stat().st_size
+    return encoded_image_size_bytes(image_array, "PNG")
+
+
 def create_dctq_pixels_input_json(resolution, output_json_path, input_image_path=None):
     source_path, resized, image_array = load_resolution_image(resolution, input_image_path)
     packed_rows, plan = encode_image_to_packed_rows(image_array, resolution)
@@ -160,12 +209,21 @@ def create_dctq_pixels_input_json(resolution, output_json_path, input_image_path
     json_data = {
         "original": packed_rows.astype(int).tolist(),
     }
+    json_payload = json.dumps(json_data, indent=2)
 
     with open(output_json_path, "w", encoding="utf-8") as handle:
-        json.dump(json_data, handle, indent=2)
+        handle.write(json_payload)
+
+    original_png_bytes = png_reference_size_bytes(source_path, resized, image_array)
+    compressed_jpeg_bytes = jpeg_size_bytes_from_custom_qmat(image_array)
+    compression_rate_pct = (
+        (compressed_jpeg_bytes / original_png_bytes) * 100.0
+        if original_png_bytes
+        else float("inf")
+    )
 
     print("=" * 70)
-    print("Raw-pixel callnova_hash input created")
+    print("Raw-pixel SNARKPEG_Poseidon input created")
     print("=" * 70)
     print(f"resolution:           {resolution} ({plan.width}x{plan.height})")
     print(f"input:                {source_path}")
@@ -178,6 +236,7 @@ def create_dctq_pixels_input_json(resolution, output_json_path, input_image_path
     print(f"padded pixels:        {plan.padded_pixels}")
     print(f"pixels per packed row:{PACKED_ROW_WIDTH}")
     print(f"packed rows per step: {PACKED_ROWS_PER_STEP}")
+    print(f"JPEG compression rate (JPEG / PNG): {compression_rate_pct:.2f}%")
 
 
 class GeneratorTests(unittest.TestCase):
@@ -204,20 +263,35 @@ class GeneratorTests(unittest.TestCase):
             [[1, 2], [3, 4], [5, 6], [0, 0]],
         )
 
-    def test_fhd_padding_is_exactly_5120_pixels(self):
+    def test_fhd_padding_is_zero_with_two_logical_rows_per_step(self):
         plan = plan_for_dimensions(*RESOLUTION_DIMS["FHD"], "FHD")
-        self.assertEqual(plan.padded_pixels, 5120)
-        self.assertEqual(plan.step_count, 203)
-
-    def test_four_k_uses_810_steps(self):
-        plan = plan_for_dimensions(*RESOLUTION_DIMS["4K"], "4K")
-        self.assertEqual(plan.step_count, 810)
         self.assertEqual(plan.padded_pixels, 0)
+        self.assertEqual(plan.step_count, 810)
+
+    def test_four_k_uses_3240_steps(self):
+        plan = plan_for_dimensions(*RESOLUTION_DIMS["4K"], "4K")
+        self.assertEqual(plan.step_count, 3240)
+        self.assertEqual(plan.padded_pixels, 0)
+
+    def test_qmat_derives_expected_jpeg_quantization_table(self):
+        self.assertEqual(
+            derive_jpeg_qtable_from_qmat(),
+            [
+                16, 11, 10, 16, 24, 39, 51, 60,
+                12, 12, 14, 19, 26, 57, 60, 54,
+                14, 13, 16, 24, 39, 57, 68, 57,
+                14, 17, 22, 29, 51, 85, 79, 60,
+                18, 22, 37, 57, 68, 255, 255, 79,
+                24, 35, 54, 64, 79, 255, 255, 93,
+                49, 64, 79, 85, 255, 255, 255, 255,
+                73, 93, 93, 255, 255, 255, 255, 255,
+            ],
+        )
 
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="Create raw-pixel input JSON for callnova_hash"
+        description="Create raw-pixel input JSON for SNARKPEG_Poseidon"
     )
     parser.add_argument(
         "source",
