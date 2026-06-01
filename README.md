@@ -1,4 +1,4 @@
-# VerImgCmp
+# SNARKPEG
 
 We have two modes for SNARKPEG:
 
