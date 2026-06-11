@@ -1,6 +1,6 @@
-# SNARKPEG
+# S(NARK)PEG
 
-We have two modes for SNARKPEG:
+We have two modes for S(NARK)PEG:
 
 - `SNARKPEG_Poseidon/`
   - our NeutronNova-based prover
