@@ -30,12 +30,10 @@ Prerequisites:
 run it with script
 
 ```bash
-cd /Users/hanbunko/Downloads/vcvc/vimz/VerImgCmp
 ./script/run_snarkpeg_poseidon.sh resolution
 ```
 e.g.
 ```bash
-cd /Users/hanbunko/Downloads/vcvc/vimz/VerImgCmp
 ./script/run_snarkpeg_poseidon.sh HD
 ```
 
@@ -51,21 +49,20 @@ Manual flow:
 
 Create an input JSON:
 
-```bash
-cd /Users/hanbunko/Downloads/vcvc/vimz/VerImgCmp
+```bash\
 python3 create_input.py HD /tmp/snarkpeg_poseidon_hd_input.json
 ```
 
 Build:
 
 ```bash
-cargo build --release --manifest-path /Users/hanbunko/Downloads/vcvc/vimz/VerImgCmp/SNARKPEG_Poseidon/Cargo.toml
+cargo build --release --manifest-path ./VerImgCmp/SNARKPEG_Poseidon/Cargo.toml
 ```
 
 Run:
 
 ```bash
-/Users/hanbunko/Downloads/vcvc/vimz/VerImgCmp/SNARKPEG_Poseidon/target/release/SNARKPEG_Poseidon \
+VerImgCmp/SNARKPEG_Poseidon/target/release/SNARKPEG_Poseidon \
   --function dctq \
   --resolution HD \
   --input /tmp/snarkpeg_poseidon_hd_input.json \
@@ -77,12 +74,12 @@ Run:
 
 run it with script
 ```bash
-cd /Users/hanbunko/Downloads/vcvc/vimz/VerImgCmp/SNARKPEG_Commit
+cd VerImgCmp/SNARKPEG_Commit
 ./script/run_snarkpeg_commit.sh resolution
 ```
 e.g.
 ```bash
-cd /Users/hanbunko/Downloads/vcvc/vimz/VerImgCmp/SNARKPEG_Commit
+cd VerImgCmp/SNARKPEG_Commit
 ./script/run_snarkpeg_commit.sh HD
 ```
 
