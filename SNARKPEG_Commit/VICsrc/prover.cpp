@@ -269,6 +269,125 @@ static void sumcheckUpdate_worker(quadratic_poly &sum, std::vector<linear_poly> 
     }
 }
 
+static inline u32 dctqMatIdx(u32 r, u32 c, u32 width) {
+    return r * width + c;
+}
+
+void prover::sumcheckDctqInitPhase1() {
+    auto &cur = C.circuit[sumcheck_id];
+    const u32 width = cur.dctq_width;
+    const u32 height = cur.dctq_height;
+    const u32 block = cur.dctq_block;
+    const auto &input = val[0];
+
+    switch (cur.specialization) {
+        case layerSpecialization::DctqLeft:
+            for (u32 br = 0; br < height; br += block) {
+                for (u32 c = 0; c < width; ++c) {
+                    F coeff[8];
+                    for (u32 k = 0; k < block; ++k) coeff[k].clear();
+                    for (u32 r = 0; r < block; ++r) {
+                        const F &bg = beta_g[dctqMatIdx(br + r, c, width)];
+                        for (u32 k = 0; k < block; ++k) {
+                            u32 q = cur.dctq_qd_start + dctqMatIdx(r, k, block);
+                            coeff[k] = coeff[k] + bg * input[q];
+                        }
+                    }
+                    for (u32 k = 0; k < block; ++k) {
+                        u32 u = dctqMatIdx(br + k, c, width);
+                        mult_array[0][u] = mult_array[0][u] + coeff[k];
+                    }
+                }
+            }
+            break;
+        case layerSpecialization::DctqRight:
+            for (u32 r = 0; r < height; ++r) {
+                for (u32 bc = 0; bc < width; bc += block) {
+                    F coeff[8];
+                    for (u32 k = 0; k < block; ++k) coeff[k].clear();
+                    for (u32 c = 0; c < block; ++c) {
+                        const F &bg = beta_g[dctqMatIdx(r, bc + c, width)];
+                        for (u32 k = 0; k < block; ++k) {
+                            u32 q = cur.dctq_qd_start + dctqMatIdx(c, k, block);
+                            coeff[k] = coeff[k] + bg * input[q];
+                        }
+                    }
+                    for (u32 k = 0; k < block; ++k) {
+                        u32 u = dctqMatIdx(r, bc + k, width);
+                        mult_array[1][u] = mult_array[1][u] + coeff[k];
+                    }
+                }
+            }
+            break;
+        case layerSpecialization::DctqHadamard:
+            for (u32 r = 0; r < height; ++r) {
+                u32 qr = r % block;
+                for (u32 c = 0; c < width; ++c) {
+                    u32 u = dctqMatIdx(r, c, width);
+                    u32 q = cur.dctq_qr_start + dctqMatIdx(qr, c % block, block);
+                    mult_array[1][u] = mult_array[1][u] + beta_g[u] * input[q];
+                }
+            }
+            break;
+        case layerSpecialization::None:
+            break;
+    }
+}
+
+void prover::sumcheckDctqInitPhase2() {
+    auto &cur = C.circuit[sumcheck_id];
+    const u32 width = cur.dctq_width;
+    const u32 height = cur.dctq_height;
+    const u32 block = cur.dctq_block;
+    const u32 block_entries = block * block;
+
+    F coeff[64];
+    for (u32 i = 0; i < block_entries; ++i) coeff[i].clear();
+
+    switch (cur.specialization) {
+        case layerSpecialization::DctqLeft:
+            for (u32 br = 0; br < height; br += block)
+                for (u32 c = 0; c < width; ++c)
+                    for (u32 r = 0; r < block; ++r) {
+                        const F &bg = beta_g[dctqMatIdx(br + r, c, width)];
+                        for (u32 k = 0; k < block; ++k) {
+                            u32 u = dctqMatIdx(br + k, c, width);
+                            coeff[dctqMatIdx(r, k, block)] =
+                                    coeff[dctqMatIdx(r, k, block)] + bg * beta_u[u];
+                        }
+                    }
+            for (u32 v = 0; v < block_entries; ++v)
+                mult_array[0][v] = mult_array[0][v] + coeff[v] * V_u0;
+            break;
+        case layerSpecialization::DctqRight:
+            for (u32 r = 0; r < height; ++r)
+                for (u32 bc = 0; bc < width; bc += block)
+                    for (u32 c = 0; c < block; ++c) {
+                        const F &bg = beta_g[dctqMatIdx(r, bc + c, width)];
+                        for (u32 k = 0; k < block; ++k) {
+                            u32 u = dctqMatIdx(r, bc + k, width);
+                            coeff[dctqMatIdx(c, k, block)] =
+                                    coeff[dctqMatIdx(c, k, block)] + bg * beta_u[u];
+                        }
+                    }
+            for (u32 v = 0; v < block_entries; ++v)
+                mult_array[0][v] = mult_array[0][v] + coeff[v] * V_u1;
+            break;
+        case layerSpecialization::DctqHadamard:
+            for (u32 r = 0; r < height; ++r)
+                for (u32 c = 0; c < width; ++c) {
+                    u32 u = dctqMatIdx(r, c, width);
+                    u32 v = dctqMatIdx(r % block, c % block, block);
+                    coeff[v] = coeff[v] + beta_g[u] * beta_u[u];
+                }
+            for (u32 v = 0; v < block_entries; ++v)
+                mult_array[0][v] = mult_array[0][v] + coeff[v] * V_u1;
+            break;
+        case layerSpecialization::None:
+            break;
+    }
+}
+
 void prover::sumcheckInitPhase1(const F &relu_rou_0) {
     fprintf(stderr, "sumcheck level %d, phase1 init start\n", sumcheck_id);
 
@@ -352,86 +471,87 @@ void prover::sumcheckInitPhase1(const F &relu_rou_0) {
 
         timer gate_t;
         gate_t.start();
-        if (cur.uni_interval.size() >= 2) {
-            // For correctness, keep uni-gate accumulation sequential.
-            for (auto &gate: cur.uni_gates) {
-                bool idx = gate.lu != 0;
-                mult_array[idx][gate.u] = mult_array[idx][gate.u] + beta_g[gate.g] * C.two_mul[gate.sc];
-            }
+        if (cur.isDctqStructured()) {
+            sumcheckDctqInitPhase1();
         } else {
-            for (auto &gate: cur.uni_gates) {
-                bool idx = gate.lu != 0;
-                mult_array[idx][gate.u] = mult_array[idx][gate.u] + beta_g[gate.g] * C.two_mul[gate.sc];
-            }
-        }
-        gate_t.stop();
-        t_gate_p1 += gate_t.elapse_sec();
-
-        gate_t.start();
-        if (cur.bin_interval.size() >= 2) {
-            const int thd = 8;
-            std::vector<std::vector<linear_poly>> local0, local1;
-            if (total[0]) {
-                local0.resize(thd);
-                for (int t = 0; t < thd; ++t) local0[t].assign(total[0], linear_poly());
-            }
-            if (total[1]) {
-                local1.resize(thd);
-                for (int t = 0; t < thd; ++t) local1[t].assign(total[1], linear_poly());
+            if (cur.uni_interval.size() >= 2) {
+                // For correctness, keep uni-gate accumulation sequential.
+                for (auto &gate: cur.uni_gates) {
+                    bool idx = gate.lu != 0;
+                    mult_array[idx][gate.u] = mult_array[idx][gate.u] + beta_g[gate.g] * C.two_mul[gate.sc];
+                }
+            } else {
+                for (auto &gate: cur.uni_gates) {
+                    bool idx = gate.lu != 0;
+                    mult_array[idx][gate.u] = mult_array[idx][gate.u] + beta_g[gate.g] * C.two_mul[gate.sc];
+                }
             }
 
-            int *L = new int[cur.bin_interval.size()], *R = new int[cur.bin_interval.size()];
-            for (u64 j = 0; j < cur.bin_interval.size(); ++j) {
-                workerq.Push(j);
-                L[j] = cur.bin_interval[j].first;
-                R[j] = cur.bin_interval[j].second;
-            }
-            for (int t = 0; t < thd; ++t) {
-                std::thread([&, t]() {
-                    int idx;
-                    while (true) {
-                        bool ret = workerq.TryPop(idx);
-                        if (!ret) return;
-                        int l = L[idx], r = R[idx];
-                        for (int i = l; i < r; ++i) {
-                            auto &gate = cur.bin_gates[i];
-                            bool which = gate.getLayerIdU(sumcheck_id) != 0;
-                            auto val_lv = !gate.getLayerIdV(sumcheck_id) ? val[0][cur.ori_id_v[gate.v]] : val[gate.getLayerIdV(sumcheck_id)][gate.v];
-                            if (which) {
-                                local1[t][gate.u] = local1[t][gate.u] + val_lv * beta_g[gate.g] * C.two_mul[gate.sc];
-                            } else {
-                                local0[t][gate.u] = local0[t][gate.u] + val_lv * beta_g[gate.g] * C.two_mul[gate.sc];
+            if (cur.bin_interval.size() >= 2) {
+                const int thd = 8;
+                std::vector<std::vector<linear_poly>> local0, local1;
+                if (total[0]) {
+                    local0.resize(thd);
+                    for (int t = 0; t < thd; ++t) local0[t].assign(total[0], linear_poly());
+                }
+                if (total[1]) {
+                    local1.resize(thd);
+                    for (int t = 0; t < thd; ++t) local1[t].assign(total[1], linear_poly());
+                }
+
+                int *L = new int[cur.bin_interval.size()], *R = new int[cur.bin_interval.size()];
+                for (u64 j = 0; j < cur.bin_interval.size(); ++j) {
+                    workerq.Push(j);
+                    L[j] = cur.bin_interval[j].first;
+                    R[j] = cur.bin_interval[j].second;
+                }
+                for (int t = 0; t < thd; ++t) {
+                    std::thread([&, t]() {
+                        int idx;
+                        while (true) {
+                            bool ret = workerq.TryPop(idx);
+                            if (!ret) return;
+                            int l = L[idx], r = R[idx];
+                            for (int i = l; i < r; ++i) {
+                                auto &gate = cur.bin_gates[i];
+                                bool which = gate.getLayerIdU(sumcheck_id) != 0;
+                                auto val_lv = !gate.getLayerIdV(sumcheck_id) ? val[0][cur.ori_id_v[gate.v]] : val[gate.getLayerIdV(sumcheck_id)][gate.v];
+                                if (which) {
+                                    local1[t][gate.u] = local1[t][gate.u] + val_lv * beta_g[gate.g] * C.two_mul[gate.sc];
+                                } else {
+                                    local0[t][gate.u] = local0[t][gate.u] + val_lv * beta_g[gate.g] * C.two_mul[gate.sc];
+                                }
                             }
+                            endq.Push(idx);
                         }
-                        endq.Push(idx);
-                    }
-                }).detach();
-            }
-            while (!workerq.Empty())
-                std::this_thread::sleep_for(std::chrono::microseconds(1));
-            while (endq.Size() != cur.bin_interval.size())
-                std::this_thread::sleep_for(std::chrono::microseconds(1));
-            endq.Clear();
-            delete[] L;
-            delete[] R;
+                    }).detach();
+                }
+                while (!workerq.Empty())
+                    std::this_thread::sleep_for(std::chrono::microseconds(1));
+                while (endq.Size() != cur.bin_interval.size())
+                    std::this_thread::sleep_for(std::chrono::microseconds(1));
+                endq.Clear();
+                delete[] L;
+                delete[] R;
 
-            if (total[0]) {
-                for (u32 u = 0; u < total[0]; ++u) {
-                    for (int t = 0; t < thd; ++t)
-                        mult_array[0][u] = mult_array[0][u] + local0[t][u];
+                if (total[0]) {
+                    for (u32 u = 0; u < total[0]; ++u) {
+                        for (int t = 0; t < thd; ++t)
+                            mult_array[0][u] = mult_array[0][u] + local0[t][u];
+                    }
                 }
-            }
-            if (total[1]) {
-                for (u32 u = 0; u < total[1]; ++u) {
-                    for (int t = 0; t < thd; ++t)
-                        mult_array[1][u] = mult_array[1][u] + local1[t][u];
+                if (total[1]) {
+                    for (u32 u = 0; u < total[1]; ++u) {
+                        for (int t = 0; t < thd; ++t)
+                            mult_array[1][u] = mult_array[1][u] + local1[t][u];
+                    }
                 }
-            }
-        } else {
-            for (auto &gate: cur.bin_gates) {
-                bool idx = gate.getLayerIdU(sumcheck_id) != 0;
-                auto val_lv = getCirValue(gate.getLayerIdV(sumcheck_id), cur.ori_id_v, gate.v);
-                mult_array[idx][gate.u] = mult_array[idx][gate.u] + val_lv * beta_g[gate.g] * C.two_mul[gate.sc];
+            } else {
+                for (auto &gate: cur.bin_gates) {
+                    bool idx = gate.getLayerIdU(sumcheck_id) != 0;
+                    auto val_lv = getCirValue(gate.getLayerIdV(sumcheck_id), cur.ori_id_v, gate.v);
+                    mult_array[idx][gate.u] = mult_array[idx][gate.u] + val_lv * beta_g[gate.g] * C.two_mul[gate.sc];
+                }
             }
         }
         gate_t.stop();
@@ -513,86 +633,87 @@ void prover::sumcheckInitPhase2() {
         }
         timer gate_t;
         gate_t.start();
-        if (cur.uni_interval.size() >= 2) {
-            // Keep uni-gate accumulation sequential for correctness.
-            for (auto &gate: cur.uni_gates) {
-                auto V_u = !gate.lu ? V_u0 : V_u1;
-                add_term = add_term + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
-            }
+        if (cur.isDctqStructured()) {
+            sumcheckDctqInitPhase2();
         } else {
-            for (auto &gate: cur.uni_gates) {
-                auto V_u = !gate.lu ? V_u0 : V_u1;
-                add_term = add_term + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
-            }
-        }
-        gate_t.stop();
-        t_gate_p2 += gate_t.elapse_sec();
-
-        gate_t.start();
-        if (cur.bin_interval.size() >= 2) {
-            const int thd = 8;
-            std::vector<std::vector<linear_poly>> local0, local1;
-            if (total[0]) {
-                local0.resize(thd);
-                for (int t = 0; t < thd; ++t) local0[t].assign(total[0], linear_poly());
-            }
-            if (total[1]) {
-                local1.resize(thd);
-                for (int t = 0; t < thd; ++t) local1[t].assign(total[1], linear_poly());
+            if (cur.uni_interval.size() >= 2) {
+                // Keep uni-gate accumulation sequential for correctness.
+                for (auto &gate: cur.uni_gates) {
+                    auto V_u = !gate.lu ? V_u0 : V_u1;
+                    add_term = add_term + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
+                }
+            } else {
+                for (auto &gate: cur.uni_gates) {
+                    auto V_u = !gate.lu ? V_u0 : V_u1;
+                    add_term = add_term + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
+                }
             }
 
-            int *L = new int[cur.bin_interval.size()], *R = new int[cur.bin_interval.size()];
-            for (u64 j = 0; j < cur.bin_interval.size(); ++j) {
-                workerq.Push(j);
-                L[j] = cur.bin_interval[j].first;
-                R[j] = cur.bin_interval[j].second;
-            }
-            for (int t = 0; t < thd; ++t) {
-                std::thread([&, t]() {
-                    int idx;
-                    while (true) {
-                        bool ret = workerq.TryPop(idx);
-                        if (!ret) return;
-                        int l = L[idx], r = R[idx];
-                        for (int i = l; i < r; ++i) {
-                            auto &gate = cur.bin_gates[i];
-                            bool which = gate.getLayerIdV(sumcheck_id);
-                            auto V_u = !gate.getLayerIdU(sumcheck_id) ? V_u0 : V_u1;
-                            if (which) {
-                                local1[t][gate.v] = local1[t][gate.v] + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
-                            } else {
-                                local0[t][gate.v] = local0[t][gate.v] + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
+            if (cur.bin_interval.size() >= 2) {
+                const int thd = 8;
+                std::vector<std::vector<linear_poly>> local0, local1;
+                if (total[0]) {
+                    local0.resize(thd);
+                    for (int t = 0; t < thd; ++t) local0[t].assign(total[0], linear_poly());
+                }
+                if (total[1]) {
+                    local1.resize(thd);
+                    for (int t = 0; t < thd; ++t) local1[t].assign(total[1], linear_poly());
+                }
+
+                int *L = new int[cur.bin_interval.size()], *R = new int[cur.bin_interval.size()];
+                for (u64 j = 0; j < cur.bin_interval.size(); ++j) {
+                    workerq.Push(j);
+                    L[j] = cur.bin_interval[j].first;
+                    R[j] = cur.bin_interval[j].second;
+                }
+                for (int t = 0; t < thd; ++t) {
+                    std::thread([&, t]() {
+                        int idx;
+                        while (true) {
+                            bool ret = workerq.TryPop(idx);
+                            if (!ret) return;
+                            int l = L[idx], r = R[idx];
+                            for (int i = l; i < r; ++i) {
+                                auto &gate = cur.bin_gates[i];
+                                bool which = gate.getLayerIdV(sumcheck_id);
+                                auto V_u = !gate.getLayerIdU(sumcheck_id) ? V_u0 : V_u1;
+                                if (which) {
+                                    local1[t][gate.v] = local1[t][gate.v] + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
+                                } else {
+                                    local0[t][gate.v] = local0[t][gate.v] + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
+                                }
                             }
+                            endq.Push(idx);
                         }
-                        endq.Push(idx);
-                    }
-                }).detach();
-            }
-            while (!workerq.Empty())
-                std::this_thread::sleep_for(std::chrono::microseconds(1));
-            while (endq.Size() != cur.bin_interval.size())
-                std::this_thread::sleep_for(std::chrono::microseconds(1));
-            endq.Clear();
-            delete[] L;
-            delete[] R;
+                    }).detach();
+                }
+                while (!workerq.Empty())
+                    std::this_thread::sleep_for(std::chrono::microseconds(1));
+                while (endq.Size() != cur.bin_interval.size())
+                    std::this_thread::sleep_for(std::chrono::microseconds(1));
+                endq.Clear();
+                delete[] L;
+                delete[] R;
 
-            if (total[0]) {
-                for (u32 v = 0; v < total[0]; ++v) {
-                    for (int t = 0; t < thd; ++t)
-                        mult_array[0][v] = mult_array[0][v] + local0[t][v];
+                if (total[0]) {
+                    for (u32 v = 0; v < total[0]; ++v) {
+                        for (int t = 0; t < thd; ++t)
+                            mult_array[0][v] = mult_array[0][v] + local0[t][v];
+                    }
                 }
-            }
-            if (total[1]) {
-                for (u32 v = 0; v < total[1]; ++v) {
-                    for (int t = 0; t < thd; ++t)
-                        mult_array[1][v] = mult_array[1][v] + local1[t][v];
+                if (total[1]) {
+                    for (u32 v = 0; v < total[1]; ++v) {
+                        for (int t = 0; t < thd; ++t)
+                            mult_array[1][v] = mult_array[1][v] + local1[t][v];
+                    }
                 }
-            }
-        } else {
-            for (auto &gate: cur.bin_gates) {
-                bool idx = gate.getLayerIdV(sumcheck_id);
-                auto V_u = !gate.getLayerIdU(sumcheck_id) ? V_u0 : V_u1;
-                mult_array[idx][gate.v] = mult_array[idx][gate.v] + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
+            } else {
+                for (auto &gate: cur.bin_gates) {
+                    bool idx = gate.getLayerIdV(sumcheck_id);
+                    auto V_u = !gate.getLayerIdU(sumcheck_id) ? V_u0 : V_u1;
+                    mult_array[idx][gate.v] = mult_array[idx][gate.v] + beta_g[gate.g] * beta_u[gate.u] * V_u * C.two_mul[gate.sc];
+                }
             }
         }
         gate_t.stop();

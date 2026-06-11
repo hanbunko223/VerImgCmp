@@ -298,6 +298,13 @@ void initLayer(layer &circuit, long size, layerType ty) {
     circuit.size = circuit.zero_start_id = size;
     circuit.bit_length = ceilPow2BitLength(size);
     circuit.ty = ty;
+    circuit.specialization = layerSpecialization::None;
+    circuit.dctq_width = 0;
+    circuit.dctq_height = 0;
+    circuit.dctq_block = 8;
+    circuit.dctq_image_start = 0;
+    circuit.dctq_qd_start = 0;
+    circuit.dctq_qr_start = 0;
 }
 
 long sqr(long x) {

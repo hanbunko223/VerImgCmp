@@ -35,9 +35,14 @@ enum class layerType {
     INPUT, FFT, IFFT, ADD_BIAS, RELU, Sqr, OPT_AVG_POOL, MAX_POOL, AVG_POOL, DOT_PROD, PADDING, FCONN, NCONV, NCONV_MUL, NCONV_ADD
 };
 
+enum class layerSpecialization {
+    None, DctqLeft, DctqRight, DctqHadamard
+};
+
 class layer {
 public:
     layerType ty;
+    layerSpecialization specialization;
     std::vector<std::pair<int,int>> uni_interval, bin_interval;
 	u32 size{}, size_u[2]{}, size_v[2]{};
 	i8 bit_length_u[2]{}, bit_length_v[2]{}, bit_length{};
@@ -57,7 +62,11 @@ public:
     // iFFT or avg pooling.
     F scale;
 
+    u32 dctq_width{}, dctq_height{}, dctq_block{};
+    u32 dctq_image_start{}, dctq_qd_start{}, dctq_qr_start{};
+
 	layer() {
+        specialization = layerSpecialization::None;
         bit_length_u[0] = bit_length_v[0] = -1;
         size_u[0] = size_v[0] = 0;
         bit_length_u[1] = bit_length_v[1] = -1;
@@ -66,7 +75,12 @@ public:
         zero_start_id = 0;
         fft_bit_length = -1;
         scale = F_ONE;
+        dctq_block = 8;
 	}
+
+    [[nodiscard]] bool isDctqStructured() const {
+        return specialization != layerSpecialization::None;
+    }
 
 	void updateSize() {
 	    max_bl_u = std::max(bit_length_u[0], bit_length_u[1]);

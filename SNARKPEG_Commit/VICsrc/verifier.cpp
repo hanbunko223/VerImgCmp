@@ -23,6 +23,57 @@ static double peak_ram_gib() {
 #endif
 }
 
+static inline u32 dctqMatIdx(u32 r, u32 c, u32 width) {
+    return r * width + c;
+}
+
+static void predicateDctqPhase2(const layer &cur_layer,
+                                const vector<F> &beta_g,
+                                const vector<F> &beta_u,
+                                const vector<F> &beta_v,
+                                F (&bin_value)[3]) {
+    const u32 width = cur_layer.dctq_width;
+    const u32 height = cur_layer.dctq_height;
+    const u32 block = cur_layer.dctq_block;
+
+    switch (cur_layer.specialization) {
+        case layerSpecialization::DctqLeft:
+            for (u32 br = 0; br < height; br += block)
+                for (u32 c = 0; c < width; ++c)
+                    for (u32 r = 0; r < block; ++r) {
+                        const F &bg = beta_g[dctqMatIdx(br + r, c, width)];
+                        for (u32 k = 0; k < block; ++k) {
+                            u32 u = dctqMatIdx(br + k, c, width);
+                            u32 v = dctqMatIdx(r, k, block);
+                            bin_value[0] = bin_value[0] + bg * beta_u[u] * beta_v[v];
+                        }
+                    }
+            break;
+        case layerSpecialization::DctqRight:
+            for (u32 r = 0; r < height; ++r)
+                for (u32 bc = 0; bc < width; bc += block)
+                    for (u32 c = 0; c < block; ++c) {
+                        const F &bg = beta_g[dctqMatIdx(r, bc + c, width)];
+                        for (u32 k = 0; k < block; ++k) {
+                            u32 u = dctqMatIdx(r, bc + k, width);
+                            u32 v = dctqMatIdx(c, k, block);
+                            bin_value[2] = bin_value[2] + bg * beta_u[u] * beta_v[v];
+                        }
+                    }
+            break;
+        case layerSpecialization::DctqHadamard:
+            for (u32 r = 0; r < height; ++r)
+                for (u32 c = 0; c < width; ++c) {
+                    u32 u = dctqMatIdx(r, c, width);
+                    u32 v = dctqMatIdx(r % block, c % block, block);
+                    bin_value[2] = bin_value[2] + beta_g[u] * beta_u[u] * beta_v[v];
+                }
+            break;
+        case layerSpecialization::None:
+            break;
+    }
+}
+
 verifier::verifier(prover *pr, const layeredCircuit &cir):
     p(pr), C(cir) {
     final_claim_u0.resize(C.size + 2);
@@ -103,6 +154,10 @@ void verifier::predicatePhase1(u8 layer_id) {
 
     uni_value[0].clear();
     uni_value[1].clear();
+    if (cur_layer.isDctqStructured()) {
+        bin_value[0] = bin_value[1] = bin_value[2] = F_ZERO;
+        return;
+    }
     if (cur_layer.ty == layerType::FFT || cur_layer.ty == layerType::IFFT)
         for (u32 u = 0; u < 1ULL << cur_layer.max_bl_u; ++u)
             uni_value[1] = uni_value[1] + beta_gs[u] * beta_u[u];
@@ -118,7 +173,9 @@ void verifier::predicatePhase2(u8 layer_id) {
     uni_value[1] = uni_value[1] * beta_v[0];
 
     auto &cur_layer = C.circuit[layer_id];
-    if (C.circuit[layer_id].ty == layerType::DOT_PROD) {
+    if (cur_layer.isDctqStructured()) {
+        predicateDctqPhase2(cur_layer, beta_g, beta_u, beta_v, bin_value);
+    } else if (C.circuit[layer_id].ty == layerType::DOT_PROD) {
         for (auto &gate: cur_layer.bin_gates)
             bin_value[gate.l] =
                     bin_value[gate.l] +
@@ -350,7 +407,7 @@ bool verifier::verifyFirstLayer() {
     double upd_p2 = p->updateP2Time();
     double liu = p->liuInitTime() + p->liuUpdateTime();
     fprintf(stderr,
-            "prover breakdown (sec): beta_p1=%.4f gate_p1=%.4f upd_p1=%.4f beta_p2=%.4f gate_p2=%.4f upd_p2=%.4f liu=%.4f\n",
+            "sumcheck detail (sec): beta_p1=%.4f gate_p1=%.4f upd_p1=%.4f beta_p2=%.4f gate_p2=%.4f upd_p2=%.4f liu=%.4f\n",
             beta_p1, gate_p1, upd_p1, beta_p2, gate_p2, upd_p2, liu);
 
     beta_g.clear();
@@ -372,21 +429,23 @@ bool verifier::verifyInput() {
         return false;
     }
 
-    double total_prover = kzh_metrics.prover_time_sec + p->proveTime();
+    double sumcheck_prover = p->proveTime();
     double total_verifier = kzh_metrics.verifier_time_sec + verifierSlowTime();
     double total_proof = kzh_metrics.proof_size_kb + p->proofSize();
     double ram_gib = peak_ram_gib();
 
     fprintf(stderr, "kzh pt = %.5f, vt = %.5f, ps = %.5f\n",
             kzh_metrics.prover_time_sec, kzh_metrics.verifier_time_sec, kzh_metrics.proof_size_kb);
-    fprintf(stderr, "Prover time %.5f sec\n", total_prover);
+    fprintf(stderr, "sumcheck pt = %.5f\n", sumcheck_prover);
+    fprintf(stderr, "pcs pt = %.5f\n", kzh_metrics.prover_time_sec);
+    fprintf(stderr, "Prover time %.5f sec\n", sumcheck_prover);
     fprintf(stderr, "Verifier time %.5f sec\n", total_verifier);
     fprintf(stderr, "Proof size %.5f kb\n", total_proof);
     fprintf(stderr, "Peak RAM %.5f GiB\n", ram_gib);
     output_tb[POLY_PT_OUT_ID] = to_string_wp(kzh_metrics.prover_time_sec);
     output_tb[POLY_VT_OUT_ID] = to_string_wp(kzh_metrics.verifier_time_sec);
     output_tb[POLY_PS_OUT_ID] = to_string_wp(kzh_metrics.proof_size_kb);
-    output_tb[TOT_PT_OUT_ID] = to_string_wp(total_prover);
+    output_tb[TOT_PT_OUT_ID] = to_string_wp(sumcheck_prover);
     output_tb[TOT_VT_OUT_ID] = to_string_wp(total_verifier);
     output_tb[TOT_PS_OUT_ID] = to_string_wp(total_proof);
     return true;

@@ -24,13 +24,12 @@ mkdir -p "$repo_root/.go-build-cache"
 run_file="$repo_root/cmake-build-release/VICsrc/demo_dctq_run"
 kzh_bin="$repo_root/kzh_gnark/zkcnn_kzh_cli"
 
-mkdir -p "$repo_root/data/dctq" "$repo_root/output/dctq" "$repo_root/log/dctq" "$repo_root/output/kzh_srs"
+mkdir -p "$repo_root/data/dctq" "$repo_root/output/dctq" "$repo_root/output/kzh_srs"
 
 resolution="${1:-HD}"
 qd_file="$repo_root/qD.txt"
 qr_file="$repo_root/qR.txt"
 out_file="${2:-$repo_root/output/dctq/dctq-${resolution}-output.txt}"
-log_file="$repo_root/log/dctq/dctq-${resolution}-run.log"
 
 case "$resolution" in
   SD) input_file="$repo_root/data/dctq/SD.txt" ;;
@@ -78,4 +77,4 @@ PY
 
 ZKCNN_KZH_BIN="$kzh_bin" \
 ZKCNN_KZH_SRS_DIR="$repo_root/output/kzh_srs" \
-"$run_file" "$input_file" "$qd_file" "$qr_file" "$out_file" > "$log_file" 2>&1
+"$run_file" "$input_file" "$qd_file" "$qr_file" "$out_file"

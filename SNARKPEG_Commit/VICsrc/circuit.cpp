@@ -1,6 +1,59 @@
 #include "circuit.h"
 #include "utils.hpp"
 
+static void resetLayerSubset(layer &cur) {
+    for (int i = 0; i < 2; ++i) {
+        cur.size_u[i] = 0;
+        cur.size_v[i] = 0;
+        cur.bit_length_u[i] = -1;
+        cur.bit_length_v[i] = -1;
+    }
+    cur.ori_id_u.clear();
+    cur.ori_id_v.clear();
+}
+
+static void appendRange(vector<u32> &out, u32 start, u32 count) {
+    out.reserve(out.size() + count);
+    for (u32 i = 0; i < count; ++i) out.push_back(start + i);
+}
+
+static void initDctqSubset(layer &cur, const layer &lst) {
+    const u32 image_size = cur.dctq_width * cur.dctq_height;
+    const u32 block_entries = cur.dctq_block * cur.dctq_block;
+
+    switch (cur.specialization) {
+        case layerSpecialization::DctqLeft:
+            cur.size_u[0] = image_size;
+            cur.bit_length_u[0] = ceilPow2BitLength(cur.size_u[0]);
+            appendRange(cur.ori_id_u, cur.dctq_image_start, image_size);
+
+            cur.size_v[0] = block_entries;
+            cur.bit_length_v[0] = ceilPow2BitLength(cur.size_v[0]);
+            appendRange(cur.ori_id_v, cur.dctq_qd_start, block_entries);
+            break;
+        case layerSpecialization::DctqRight:
+            cur.size_u[1] = lst.size;
+            cur.bit_length_u[1] = lst.bit_length;
+
+            cur.size_v[0] = block_entries;
+            cur.bit_length_v[0] = ceilPow2BitLength(cur.size_v[0]);
+            appendRange(cur.ori_id_v, cur.dctq_qd_start, block_entries);
+            break;
+        case layerSpecialization::DctqHadamard:
+            cur.size_u[1] = lst.size;
+            cur.bit_length_u[1] = lst.bit_length;
+
+            cur.size_v[0] = block_entries;
+            cur.bit_length_v[0] = ceilPow2BitLength(cur.size_v[0]);
+            appendRange(cur.ori_id_v, cur.dctq_qr_start, block_entries);
+            break;
+        case layerSpecialization::None:
+            break;
+    }
+
+    cur.updateSize();
+}
+
 void layeredCircuit::initSubset() {
     cerr << "begin subset init." << endl;
     vector<int> visited_uidx(circuit[0].size);  // whether the i-th layer, j-th gate has been visited in the current layer
@@ -10,6 +63,12 @@ void layeredCircuit::initSubset() {
 
     for (u8 i = 1; i < size; ++i) {
         auto &cur = circuit[i], &lst = circuit[i - 1];
+        resetLayerSubset(cur);
+        if (cur.isDctqStructured()) {
+            initDctqSubset(cur, lst);
+            continue;
+        }
+
         bool has_pre_layer_u = circuit[i].ty == layerType::FFT || circuit[i].ty == layerType::IFFT;
         bool has_pre_layer_v = false;
 

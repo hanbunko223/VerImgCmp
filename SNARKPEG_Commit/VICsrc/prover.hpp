@@ -56,6 +56,8 @@ private:
     quadratic_poly sumcheckUpdateEach(const F &previous_random, bool idx);
     quadratic_poly sumcheckUpdate(const F &previous_random, vector<F> &r_arr);
     F getCirValue(u8 layer_id, const vector<u32> &ori, u32 u);
+    void sumcheckDctqInitPhase1();
+    void sumcheckDctqInitPhase2();
 
     vector<F>::iterator r_0, r_1;         // current positions
     vector<vector<F>> r_u, r_v;             // next positions

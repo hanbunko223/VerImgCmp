@@ -77,7 +77,5 @@ int main(int argc, char **argv) {
     verifier v(&p, p.C);
     v.verify();
 
-    for (auto &s : output_tb) printf("%s, ", s.c_str());
-    puts("");
     return 0;
 }

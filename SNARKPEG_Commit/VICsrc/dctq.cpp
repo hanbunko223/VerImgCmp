@@ -21,26 +21,17 @@ static i64 toSignedInt(const F &v) {
 }
 
 static constexpr int kThreads = 8;
-static constexpr int kIntervalParts = kThreads * 4;
 
-static void buildIntervals(layer &circuit) {
-    circuit.uni_interval.clear();
-    circuit.bin_interval.clear();
-
-    auto make_intervals = [](size_t total, std::vector<std::pair<int,int>> &intervals) {
-        if (total == 0) return;
-        size_t parts = std::min<size_t>(kIntervalParts, total);
-        size_t chunk = (total + parts - 1) / parts;
-        for (size_t i = 0; i < parts; ++i) {
-            size_t l = i * chunk;
-            if (l >= total) break;
-            size_t r = std::min(total, l + chunk);
-            intervals.emplace_back(static_cast<int>(l), static_cast<int>(r));
-        }
-    };
-
-    make_intervals(circuit.uni_gates.size(), circuit.uni_interval);
-    make_intervals(circuit.bin_gates.size(), circuit.bin_interval);
+static void markDctqLayer(layer &circuit, layerSpecialization specialization,
+                          i64 width, i64 height, i64 block,
+                          i64 image_start, i64 qd_start, i64 qr_start) {
+    circuit.specialization = specialization;
+    circuit.dctq_width = static_cast<u32>(width);
+    circuit.dctq_height = static_cast<u32>(height);
+    circuit.dctq_block = static_cast<u32>(block);
+    circuit.dctq_image_start = static_cast<u32>(image_start);
+    circuit.dctq_qd_start = static_cast<u32>(qd_start);
+    circuit.dctq_qr_start = static_cast<u32>(qr_start);
 }
 
 static void parallelRange(i64 begin, i64 end, int threads, const std::function<void(i64, i64)> &work) {
@@ -134,21 +125,8 @@ void dctq::dctLeftLayer(layer &circuit, i64 &layer_id) {
     i64 out_size = height * width;
     initLayer(circuit, out_size, layerType::FCONN);
     circuit.need_phase2 = true;
-
-    for (i64 br = 0; br < height; br += kBlock) {
-        for (i64 r = 0; r < kBlock; ++r) {
-            i64 out_r = br + r;
-            for (i64 c = 0; c < width; ++c) {
-                i64 g = matIdx(out_r, c, width);
-                for (i64 k = 0; k < kBlock; ++k) {
-                    i64 u = image_start_id + matIdx(br + k, c, width);
-                    i64 v = dct_left_start_id + matIdx(r, k, kBlock);
-                    circuit.bin_gates.emplace_back(g, u, v, 0, 0);
-                }
-            }
-        }
-    }
-    buildIntervals(circuit);
+    markDctqLayer(circuit, layerSpecialization::DctqLeft, width, height, kBlock,
+                  image_start_id, dct_left_start_id, dct_left_start_id + dct_size);
 
     val[layer_id].resize(out_size);
     auto &out = val[layer_id];
@@ -180,21 +158,8 @@ void dctq::dctRightLayer(layer &circuit, i64 &layer_id) {
     i64 out_size = height * width;
     initLayer(circuit, out_size, layerType::FCONN);
     circuit.need_phase2 = true;
-
-    for (i64 r = 0; r < height; ++r) {
-        for (i64 bc = 0; bc < width; bc += kBlock) {
-            for (i64 c = 0; c < kBlock; ++c) {
-                i64 out_c = bc + c;
-                i64 g = matIdx(r, out_c, width);
-                for (i64 k = 0; k < kBlock; ++k) {
-                    i64 u = matIdx(r, bc + k, width);
-                    i64 v = dct_left_start_id + matIdx(c, k, kBlock);
-                    circuit.bin_gates.emplace_back(g, u, v, 0, 2);
-                }
-            }
-        }
-    }
-    buildIntervals(circuit);
+    markDctqLayer(circuit, layerSpecialization::DctqRight, width, height, kBlock,
+                  image_start_id, dct_left_start_id, dct_left_start_id + dct_size);
 
     val[layer_id].resize(out_size);
     auto &out = val[layer_id];
@@ -226,16 +191,8 @@ void dctq::hadamardLayer(layer &circuit, i64 &layer_id) {
     circuit.need_phase2 = true;
 
     i64 q_start = dct_left_start_id + dct_size;
-    for (i64 r = 0; r < height; ++r)
-        for (i64 c = 0; c < width; ++c) {
-            i64 g = matIdx(r, c, width);
-            i64 u = g;
-            i64 qr = r & (kBlock - 1);
-            i64 qc = c & (kBlock - 1);
-            i64 v = q_start + matIdx(qr, qc, kBlock);
-            circuit.bin_gates.emplace_back(g, u, v, 0, 2);
-        }
-    buildIntervals(circuit);
+    markDctqLayer(circuit, layerSpecialization::DctqHadamard, width, height, kBlock,
+                  image_start_id, dct_left_start_id, q_start);
 
     val[layer_id].resize(out_size);
     auto &out = val[layer_id];
