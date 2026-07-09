@@ -23,6 +23,7 @@ void prover::init() {
     t_gate_p1 = t_gate_p2 = 0.0;
     t_update_p1 = t_update_p2 = 0.0;
     t_liu_init = t_liu_update = 0.0;
+    t_vres = 0.0;
     i8 max_bl = 0;
     for (auto &ly : C.circuit) {
         max_bl = std::max(max_bl, ly.bit_length);
@@ -565,30 +566,41 @@ void prover::sumcheckLiuInit(const vector<F> &s_u, const vector<F> &s_v) {
     prove_timer.start();
     add_term.clear();
 
-    for (u32 g = 0; g < total[1]; ++g) {
-        mult_array[1][g].clear();
-        V_mult[1][g] = (g < total_size[1]) ? val[0][g] : F_ZERO;
-    }
+    parallelFor(0, total[1], parallelThreadsFor(total[1]), [&](u64 l, u64 r) {
+        for (u64 g = l; g < r; ++g) {
+            mult_array[1][g].clear();
+            V_mult[1][g] = (g < total_size[1]) ? val[0][g] : F_ZERO;
+        }
+    });
 
     for (u8 i = sumcheck_id + 1; i < C.size; ++i) {
         i8 bit_length_i = C.circuit[i].bit_length_u[0];
         u32 size_i = C.circuit[i].size_u[0];
         if (~bit_length_i) {
-            initBetaTable(beta_g, bit_length_i, r_u[i].begin(), s_u[i - 1]);
-            for (u32 hu = 0; hu < size_i; ++hu) {
-                u32 u = C.circuit[i].ori_id_u[hu];
-                mult_array[1][u] = mult_array[1][u] + beta_g[hu];
-            }
+            initBetaTable(beta_g, bit_length_i, r_u[i].begin(), s_u[i - 1], (int) hwThreads());
+            // ori_id_u has no duplicate entries within a layer (each input
+            // wire is recorded once in initSubset), so distinct hu's touch
+            // distinct u's -- safe to parallelize this one layer's pass.
+            auto &ori_u = C.circuit[i].ori_id_u;
+            parallelFor(0, size_i, parallelThreadsFor(size_i), [&](u64 l, u64 r) {
+                for (u64 hu = l; hu < r; ++hu) {
+                    u32 u = ori_u[hu];
+                    mult_array[1][u] = mult_array[1][u] + beta_g[hu];
+                }
+            });
         }
 
         bit_length_i = C.circuit[i].bit_length_v[0];
         size_i = C.circuit[i].size_v[0];
         if (~bit_length_i) {
-            initBetaTable(beta_g, bit_length_i, r_v[i].begin(), s_v[i - 1]);
-            for (u32 hv = 0; hv < size_i; ++hv) {
-                u32 v = C.circuit[i].ori_id_v[hv];
-                mult_array[1][v] = mult_array[1][v] + beta_g[hv];
-            }
+            initBetaTable(beta_g, bit_length_i, r_v[i].begin(), s_v[i - 1], (int) hwThreads());
+            auto &ori_v = C.circuit[i].ori_id_v;
+            parallelFor(0, size_i, parallelThreadsFor(size_i), [&](u64 l, u64 r) {
+                for (u64 hv = l; hv < r; ++hv) {
+                    u32 v = ori_v[hv];
+                    mult_array[1][v] = mult_array[1][v] + beta_g[hv];
+                }
+            });
         }
     }
 
@@ -724,6 +736,8 @@ quadratic_poly prover::sumcheckUpdateEach(const F &previous_random, bool idx) {
  */
 F prover::Vres(const vector<F>::const_iterator &r, u32 output_size, u8 r_size) {
     prove_timer.start();
+    timer t;
+    t.start();
 
     // Two buffers instead of folding in place: threads handling different
     // output ranges in the same round would otherwise race (one thread's
@@ -757,6 +771,8 @@ F prover::Vres(const vector<F>::const_iterator &r, u32 output_size, u8 r_size) {
     }
     F res = (*cur)[0];
 
+    t.stop();
+    t_vres += t.elapse_sec();
     prove_timer.stop();
     proof_size += F_BYTE_SIZE;
     return res;

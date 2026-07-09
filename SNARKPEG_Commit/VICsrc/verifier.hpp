@@ -20,8 +20,13 @@ public:
     timer total_timer, total_slow_timer;
     double verifierTime() const { return total_timer.elapse_sec(); }
     double verifierSlowTime() const { return total_slow_timer.elapse_sec(); }
+    double betaInitTime() const { return beta_init_timer.elapse_sec(); }
+    double predicateTime() const { return predicate_timer.elapse_sec(); }
+    double liuVerifyTime() const { return liu_verify_timer.elapse_sec(); }
 
 private:
+    timer beta_init_timer, predicate_timer, liu_verify_timer;
+
     vector<vector<F>> r_u, r_v;
     vector<F> final_claim_u0, final_claim_v0;
     bool verifyInnerLayers();

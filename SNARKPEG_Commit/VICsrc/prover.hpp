@@ -49,6 +49,7 @@ public:
     double updateP2Time() const { return t_update_p2; }
     double liuInitTime() const { return t_liu_init; }
     double liuUpdateTime() const { return t_liu_update; }
+    double vresTime() const { return t_vres; }
 
     layeredCircuit C;
     vector<vector<F>> val;        // the output of each gate
@@ -84,6 +85,7 @@ private:
     double t_gate_p1{}, t_gate_p2{};
     double t_update_p1{}, t_update_p2{};
     double t_liu_init{}, t_liu_update{};
+    double t_vres{};
 
     friend neuralNetwork;
     friend singleConv;

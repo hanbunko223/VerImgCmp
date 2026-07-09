@@ -108,9 +108,10 @@ void dctq::create(prover &pr, bool only_compute) {
 void dctq::inputLayer(layer &circuit) {
     initLayer(circuit, total_in_size, layerType::INPUT);
 
-    circuit.uni_gates.reserve(total_in_size);
-    for (i64 i = 0; i < total_in_size; ++i)
-        circuit.uni_gates.emplace_back(i, i, 0, 0);
+    // circuit[0]'s uni_gates would normally be an identity mapping, but the
+    // GKR sumcheck loop only ever proves layers 1..size-1 (the DCTQ layers
+    // below read straight from `val[0]`), so populating it here is dead
+    // work -- nothing ever reads circuit[0].uni_gates.
 
     val[0].resize(total_in_size);
 
@@ -232,16 +233,70 @@ void dctq::calcNormalLayer(const layer &circuit, i64 layer_id) {
         val[layer_id].at(g) = val[layer_id].at(g) * circuit.scale;
 }
 
+// Parses one whitespace-separated decimal number starting at `p` (stopping
+// at `end`), writing the position just past it to `next`. Returns 0 if `p`
+// is already at `end`, matching the old `ifstream >> double` "else F_ZERO"
+// fallback for a short/malformed row.
+static double parseDoubleAt(const char *p, const char *end, const char *&next) {
+    while (p < end && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) ++p;
+    bool neg = false;
+    if (p < end && (*p == '-' || *p == '+')) { neg = (*p == '-'); ++p; }
+    double v = 0.0;
+    while (p < end && *p >= '0' && *p <= '9') { v = v * 10.0 + (*p - '0'); ++p; }
+    if (p < end && *p == '.') {
+        ++p;
+        double frac = 0.1;
+        while (p < end && *p >= '0' && *p <= '9') { v += (*p - '0') * frac; frac *= 0.1; ++p; }
+    }
+    if (p < end && (*p == 'e' || *p == 'E')) {
+        ++p;
+        bool eneg = false;
+        if (p < end && (*p == '-' || *p == '+')) { eneg = (*p == '-'); ++p; }
+        int exp = 0;
+        while (p < end && *p >= '0' && *p <= '9') { exp = exp * 10 + (*p - '0'); ++p; }
+        v *= std::pow(10.0, eneg ? -exp : exp);
+    }
+    next = p;
+    return neg ? -v : v;
+}
+
 void dctq::loadImage() {
-    double num = 0.0;
-    for (i64 r = 0; r < height; ++r)
-        for (i64 c = 0; c < width; ++c) {
-            i64 idx = image_start_id + matIdx(r, c, width);
-            if (in >> num)
+    // ifstream::operator>> is a poor fit here: it's a single serial cursor
+    // over the whole file, so it can't be parallelized in place. Instead,
+    // slurp the file once (one fast bulk read), then parse rows in
+    // parallel -- each row is self-contained (exactly `width` values, per
+    // infer_matrix_shape's up-front validation), so a thread's starting
+    // value-index only depends on its row range, not on how much any other
+    // thread has parsed.
+    in.clear();
+    in.seekg(0, std::ios::end);
+    auto len = (size_t) in.tellg();
+    in.seekg(0, std::ios::beg);
+    std::vector<char> buf(len);
+    if (len) in.read(buf.data(), (std::streamsize) len);
+
+    std::vector<size_t> row_start((size_t) height + 1);
+    size_t pos = 0;
+    for (i64 r = 0; r < height; ++r) {
+        while (pos < len && (buf[pos] == '\n' || buf[pos] == '\r')) ++pos;
+        row_start[r] = pos;
+        while (pos < len && buf[pos] != '\n') ++pos;
+    }
+    row_start[(size_t) height] = len;
+
+    parallelFor(0, height, parallelThreadsFor((u64) height * width), [&](u64 r0, u64 r1) {
+        for (u64 r = r0; r < r1; ++r) {
+            const char *p = buf.data() + row_start[r];
+            const char *end = buf.data() + row_start[r + 1];
+            for (i64 c = 0; c < width; ++c) {
+                const char *next;
+                double num = parseDoubleAt(p, end, next);
+                p = next;
+                i64 idx = image_start_id + matIdx((i64) r, c, width);
                 val[0].at(idx) = F(toFieldInt(num));
-            else
-                val[0].at(idx) = F_ZERO;
+            }
         }
+    });
 }
 
 void dctq::initDctLeft() {

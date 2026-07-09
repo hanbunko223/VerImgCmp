@@ -145,7 +145,13 @@ void fft(vector<F> &arr, int logn, bool flag) {
 }
 
 unsigned hwThreads() {
-    static const unsigned n = std::max(1u, std::thread::hardware_concurrency());
+    static const unsigned n = [] {
+        if (const char *env = std::getenv("VIC_NUM_THREADS")) {
+            int v = std::atoi(env);
+            if (v > 0) return (unsigned) v;
+        }
+        return std::max(1u, std::thread::hardware_concurrency());
+    }();
     return n;
 }
 

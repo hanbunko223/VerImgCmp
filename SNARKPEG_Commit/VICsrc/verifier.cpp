@@ -288,8 +288,12 @@ bool verifier::verifyInnerLayers() {
         else p->sumcheckFinalize1(previousRandom, final_claim_u0[i], final_claim_u1);
 
         total_slow_timer.start();
+        beta_init_timer.start();
         betaInitPhase1(i, alpha, beta, r_0, r_1, relu_rou);
+        beta_init_timer.stop();
+        predicate_timer.start();
         predicatePhase1(i);
+        predicate_timer.stop();
 
         total_timer.start();
         if (cur.need_phase2) {
@@ -320,8 +324,12 @@ bool verifier::verifyInnerLayers() {
             p->sumcheckFinalize2(previousRandom, final_claim_v0[i], final_claim_v1);
 
             total_slow_timer.start();
+            beta_init_timer.start();
             betaInitPhase2(i);
+            beta_init_timer.stop();
+            predicate_timer.start();
             predicatePhase2(i);
+            predicate_timer.stop();
             total_timer.start();
         }
         F test_value = getFinalValue(final_claim_u0[i], final_claim_u1, final_claim_v0[i], final_claim_v1);
@@ -397,22 +405,43 @@ bool verifier::verifyFirstLayer() {
     beta_g.resize(1ULL << cur.bit_length);
 
     total_slow_timer.start();
+    liu_verify_timer.start();
     initBetaTable(beta_g, cur.bit_length, r_0, F_ONE, (int) hwThreads());
+    std::mutex gr_mutex;
     for (int i = 1; i < C.size; ++i) {
         if (~C.circuit[i].bit_length_u[0]) {
             beta_u.resize(1ULL << C.circuit[i].bit_length_u[0]);
             initBetaTable(beta_u, C.circuit[i].bit_length_u[0], r_u[i].begin(), sig_u[i - 1], (int) hwThreads());
-            for (u32 j = 0; j < C.circuit[i].size_u[0]; ++j)
-                gr = gr + beta_g[C.circuit[i].ori_id_u[j]] * beta_u[j];
+            // ori_id_u has no duplicates within a layer, so this is a plain
+            // reduction: each thread accumulates locally, then merges once.
+            u32 size_u0 = C.circuit[i].size_u[0];
+            auto &ori_u = C.circuit[i].ori_id_u;
+            parallelFor(0, size_u0, parallelThreadsFor(size_u0), [&](u64 l, u64 r) {
+                F local;
+                local.clear();
+                for (u64 j = l; j < r; ++j)
+                    local = local + beta_g[ori_u[j]] * beta_u[j];
+                std::lock_guard<std::mutex> lock(gr_mutex);
+                gr = gr + local;
+            });
         }
 
         if (~C.circuit[i].bit_length_v[0]) {
             beta_v.resize(1ULL << C.circuit[i].bit_length_v[0]);
             initBetaTable(beta_v, C.circuit[i].bit_length_v[0], r_v[i].begin(), sig_v[i - 1], (int) hwThreads());
-            for (u32 j = 0; j < C.circuit[i].size_v[0]; ++j)
-                gr = gr + beta_g[C.circuit[i].ori_id_v[j]] * beta_v[j];
+            u32 size_v0 = C.circuit[i].size_v[0];
+            auto &ori_v = C.circuit[i].ori_id_v;
+            parallelFor(0, size_v0, parallelThreadsFor(size_v0), [&](u64 l, u64 r) {
+                F local;
+                local.clear();
+                for (u64 j = l; j < r; ++j)
+                    local = local + beta_g[ori_v[j]] * beta_v[j];
+                std::lock_guard<std::mutex> lock(gr_mutex);
+                gr = gr + local;
+            });
         }
     }
+    liu_verify_timer.stop();
 
     beta_u.clear();
     beta_v.clear();
@@ -438,8 +467,11 @@ bool verifier::verifyFirstLayer() {
     double upd_p2 = p->updateP2Time();
     double liu = p->liuInitTime() + p->liuUpdateTime();
     fprintf(stderr,
-            "sumcheck detail (sec): beta_p1=%.4f gate_p1=%.4f upd_p1=%.4f beta_p2=%.4f gate_p2=%.4f upd_p2=%.4f liu=%.4f\n",
-            beta_p1, gate_p1, upd_p1, beta_p2, gate_p2, upd_p2, liu);
+            "sumcheck detail (sec): beta_p1=%.4f gate_p1=%.4f upd_p1=%.4f beta_p2=%.4f gate_p2=%.4f upd_p2=%.4f liu=%.4f vres=%.4f\n",
+            beta_p1, gate_p1, upd_p1, beta_p2, gate_p2, upd_p2, liu, p->vresTime());
+    fprintf(stderr,
+            "verifier detail (sec): beta_init=%.4f predicate=%.4f liu_verify=%.4f\n",
+            betaInitTime(), predicateTime(), liuVerifyTime());
 
     beta_g.clear();
     beta_gs.clear();

@@ -5,6 +5,7 @@
 #include "dctq.hpp"
 #include "verifier.hpp"
 #include "global_var.hpp"
+#include "timer.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -72,7 +73,11 @@ int main(int argc, char **argv) {
 
     prover p;
     dctq comp(width, height, i_filename, dct_filename, q_filename, o_filename);
+    timer circuit_timer;
+    circuit_timer.start();
     comp.create(p, false);
+    circuit_timer.stop();
+    fprintf(stderr, "circuit construction (sec): %.4f\n", circuit_timer.elapse_sec());
 
     verifier v(&p, p.C);
     v.verify();
