@@ -43,7 +43,6 @@ class layer {
 public:
     layerType ty;
     layerSpecialization specialization;
-    std::vector<std::pair<int,int>> uni_interval, bin_interval;
 	u32 size{}, size_u[2]{}, size_v[2]{};
 	i8 bit_length_u[2]{}, bit_length_v[2]{}, bit_length{};
     i8 max_bl_u{}, max_bl_v{};

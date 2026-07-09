@@ -20,7 +20,7 @@ static i64 toSignedInt(const F &v) {
     return -abs_v.getInt64();
 }
 
-static constexpr int kThreads = 8;
+static const int kThreads = (int) hwThreads();
 
 static void markDctqLayer(layer &circuit, layerSpecialization specialization,
                           i64 width, i64 height, i64 block,

@@ -5,7 +5,6 @@
 #include <cmath>
 #include <iostream>
 #include <thread>
-#include <chrono>
 #include "utils.hpp"
 
 using std::cerr;
@@ -145,34 +144,36 @@ void fft(vector<F> &arr, int logn, bool flag) {
     }
 }
 
-static ThreadSafeQueue<int> workerq, endq;
-
-static void initBetaTable_worker(vector<F> &beta_g, vector<F> &beta_f, vector<F> &beta_s,
-                                 int *&L, int *&R, int first_half, int mask_fhalf) {
-    int idx;
-    while (true) {
-        bool ret = workerq.TryPop(idx);
-        if (!ret) return;
-        int l = L[idx], r = R[idx];
-        for (int kp = l; kp < r; kp++) {
-            beta_g[kp] = beta_f[kp & mask_fhalf] * beta_s[kp >> first_half];
-        }
-        endq.Push(idx);
-    }
+unsigned hwThreads() {
+    static const unsigned n = std::max(1u, std::thread::hardware_concurrency());
+    return n;
 }
 
-static void initBetaTable_worker_add(vector<F> &beta_g, vector<F> &beta_f, vector<F> &beta_s,
-                                     int *&L, int *&R, int first_half, int mask_fhalf) {
-    int idx;
-    while (true) {
-        bool ret = workerq.TryPop(idx);
-        if (!ret) return;
-        int l = L[idx], r = R[idx];
-        for (int kp = l; kp < r; kp++) {
-            beta_g[kp] = beta_g[kp] + beta_f[kp & mask_fhalf] * beta_s[kp >> first_half];
-        }
-        endq.Push(idx);
+unsigned parallelThreadsFor(u64 n) {
+    return n >= (1ULL << 15) ? hwThreads() : 1u;
+}
+
+void parallelFor(u64 begin, u64 end, unsigned threads, const std::function<void(u64, u64)> &body) {
+    if (threads <= 1 || end <= begin) {
+        body(begin, end);
+        return;
     }
+    u64 total = end - begin;
+    if (total < threads) threads = (unsigned) total;
+    if (threads <= 1) {
+        body(begin, end);
+        return;
+    }
+    u64 chunk = (total + threads - 1) / threads;
+    std::vector<std::thread> workers;
+    workers.reserve(threads);
+    for (unsigned t = 0; t < threads; ++t) {
+        u64 start = begin + t * chunk;
+        if (start >= end) break;
+        u64 finish = std::min(end, start + chunk);
+        workers.emplace_back(body, start, finish);
+    }
+    for (auto &th: workers) th.join();
 }
 
 void
@@ -188,26 +189,11 @@ initBetaTable(vector<F> &beta_g, u8 gLength, const vector<F>::const_iterator &r_
             for (u32 i = 0; i < (1ULL << gLength); ++i)
                 beta_g[i] = beta_f[i & mask_fhalf] * beta_s[i >> first_half];
         } else {
-            const int k = 10;
-            int total_work = (1ULL << gLength);
-            int *L = new int[(1 << k)], *R = new int[(1 << k)];
-            for (u64 j = 0; j < (1 << k); ++j) {
-                workerq.Push(j);
-                L[j] = (total_work >> k) * j;
-                R[j] = (total_work >> k) * (1 + j);
-            }
-            for (int j = 0; j < thread; j++) {
-                std::thread t(initBetaTable_worker, std::ref(beta_g), std::ref(beta_f), std::ref(beta_s),
-                              std::ref(L), std::ref(R), first_half, mask_fhalf);
-                t.detach();
-            }
-            while (!workerq.Empty())
-                std::this_thread::sleep_for(std::chrono::microseconds(10));
-            while (endq.Size() != (1 << k))
-                std::this_thread::sleep_for(std::chrono::microseconds(10));
-            endq.Clear();
-            delete[] L;
-            delete[] R;
+            u64 total_work = 1ULL << gLength;
+            parallelFor(0, total_work, (unsigned) thread, [&](u64 l, u64 r) {
+                for (u64 kp = l; kp < r; ++kp)
+                    beta_g[kp] = beta_f[kp & mask_fhalf] * beta_s[kp >> first_half];
+            });
         }
     } else for (u32 i = 0; i < (1ULL << gLength); ++i)
         beta_g[i].clear();
@@ -218,26 +204,11 @@ initBetaTable(vector<F> &beta_g, u8 gLength, const vector<F>::const_iterator &r_
         for (u32 i = 0; i < (1ULL << gLength); ++i)
             beta_g[i] = beta_g[i] + beta_f[i & mask_fhalf] * beta_s[i >> first_half];
     } else {
-        const int k = 10;
-        int total_work = (1ULL << gLength);
-        int *L = new int[(1 << k)], *R = new int[(1 << k)];
-        for (u64 j = 0; j < (1 << k); ++j) {
-            workerq.Push(j);
-            L[j] = (total_work >> k) * j;
-            R[j] = (total_work >> k) * (1 + j);
-        }
-        for (int j = 0; j < thread; j++) {
-            std::thread t(initBetaTable_worker_add, std::ref(beta_g), std::ref(beta_f), std::ref(beta_s),
-                          std::ref(L), std::ref(R), first_half, mask_fhalf);
-            t.detach();
-        }
-        while (!workerq.Empty())
-            std::this_thread::sleep_for(std::chrono::microseconds(10));
-        while (endq.Size() != (1 << k))
-            std::this_thread::sleep_for(std::chrono::microseconds(10));
-        endq.Clear();
-        delete[] L;
-        delete[] R;
+        u64 total_work = 1ULL << gLength;
+        parallelFor(0, total_work, (unsigned) thread, [&](u64 l, u64 r) {
+            for (u64 kp = l; kp < r; ++kp)
+                beta_g[kp] = beta_g[kp] + beta_f[kp & mask_fhalf] * beta_s[kp >> first_half];
+        });
     }
 }
 
@@ -254,26 +225,11 @@ void initBetaTable(vector<F> &beta_g, u8 gLength, const vector<F>::const_iterato
             for (u32 i = 0; i < (1ULL << gLength); ++i)
                 beta_g[i] = beta_f[i & mask_fhalf] * beta_s[i >> first_half];
         } else {
-            const int k = 10;
-            int total_work = (1ULL << gLength);
-            int *L = new int[(1 << k)], *R = new int[(1 << k)];
-            for (u64 j = 0; j < (1 << k); ++j) {
-                workerq.Push(j);
-                L[j] = (total_work >> k) * j;
-                R[j] = (total_work >> k) * (1 + j);
-            }
-            for (int j = 0; j < thread; j++) {
-                std::thread t(initBetaTable_worker, std::ref(beta_g), std::ref(beta_f), std::ref(beta_s),
-                              std::ref(L), std::ref(R), first_half, mask_fhalf);
-                t.detach();
-            }
-            while (!workerq.Empty())
-                std::this_thread::sleep_for(std::chrono::microseconds(10));
-            while (endq.Size() != (1 << k))
-                std::this_thread::sleep_for(std::chrono::microseconds(10));
-            endq.Clear();
-            delete[] L;
-            delete[] R;
+            u64 total_work = 1ULL << gLength;
+            parallelFor(0, total_work, (unsigned) thread, [&](u64 lo, u64 hi) {
+                for (u64 kp = lo; kp < hi; ++kp)
+                    beta_g[kp] = beta_f[kp & mask_fhalf] * beta_s[kp >> first_half];
+            });
         }
     } else for (u32 i = 0; i < (1ULL << gLength); ++i)
         beta_g[i].clear();
@@ -341,5 +297,4 @@ F getRootOfUnit(int n) {
     }
     return res;
 }
-
 

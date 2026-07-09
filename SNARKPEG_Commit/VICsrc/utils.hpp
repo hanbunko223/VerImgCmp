@@ -6,9 +6,19 @@
 #define ZKCNN_UTILS_HPP
 
 #include "circuit.h"
-#include <queue>
-#include <mutex>
-#include <condition_variable>
+#include <functional>
+
+// Number of hardware threads to target for parallel work in this process.
+unsigned hwThreads();
+
+// Returns hwThreads() when `n` is large enough to amortize thread spin-up
+// overhead, otherwise 1 (i.e. run serially).
+unsigned parallelThreadsFor(u64 n);
+
+// Splits [begin, end) into `threads` contiguous chunks and runs `body(l, r)`
+// for each chunk on its own thread, blocking until all have joined. Falls
+// back to calling body(begin, end) directly when threads <= 1.
+void parallelFor(u64 begin, u64 end, unsigned threads, const std::function<void(u64, u64)> &body);
 
 int ceilPow2BitLengthSigned(double n);
 int floorPow2BitLengthSigned(double n);
@@ -29,47 +39,6 @@ void phiGInit(vector<F> &phi_g, const vector<F>::const_iterator &rx, const F &sc
 
 void initBetaTable(vector<F> &beta_g, u8 gLength, const vector<F>::const_iterator &r, const F &init);
 void initBetaTable(vector<F> &beta_g, u8 gLength, const vector<F>::const_iterator &r, const F &init, int thread);
-
-template <typename T>
-class ThreadSafeQueue {
-public:
-    ThreadSafeQueue() = default;
-    void Push(T value) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        queue_.push(value);
-        condition_variable_.notify_one();
-    }
-    bool TryPop(T &value) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        if (queue_.empty()) return false;
-        value = queue_.front();
-        queue_.pop();
-        return true;
-    }
-    void WaitAndPop(T &value) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        condition_variable_.wait(lock, [this] { return !queue_.empty(); });
-        value = queue_.front();
-        queue_.pop();
-    }
-    bool Empty() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        return queue_.empty();
-    }
-    size_t Size() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        return queue_.size();
-    }
-    void Clear() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        queue_ = std::queue<T>();
-    }
-
-private:
-    std::mutex mutex_;
-    std::queue<T> queue_;
-    std::condition_variable condition_variable_;
-};
 
 bool check(long x, long y, long nx, long ny);
 
