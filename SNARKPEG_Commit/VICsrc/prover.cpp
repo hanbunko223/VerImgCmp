@@ -725,22 +725,37 @@ quadratic_poly prover::sumcheckUpdateEach(const F &previous_random, bool idx) {
 F prover::Vres(const vector<F>::const_iterator &r, u32 output_size, u8 r_size) {
     prove_timer.start();
 
-    vector<F> output(output_size);
-    for (u32 i = 0; i < output_size; ++i)
-        output[i] = val[C.size - 1][i];
+    // Two buffers instead of folding in place: threads handling different
+    // output ranges in the same round would otherwise race (one thread's
+    // input index can fall in another thread's output range).
+    vector<F> bufA(output_size), bufB(output_size);
+    vector<F> *cur = &bufA, *nxt = &bufB;
+
+    parallelFor(0, output_size, parallelThreadsFor(output_size), [&](u64 l, u64 hi) {
+        for (u64 i = l; i < hi; ++i)
+            (*cur)[i] = val[C.size - 1][i];
+    });
+
     u32 whole = 1ULL << r_size;
     for (u8 i = 0; i < r_size; ++i) {
-        for (u32 j = 0; j < (whole >> 1); ++j) {
-            if (j > 0)
-                output[j].clear();
-            if ((j << 1) < output_size)
-                output[j] = output[j << 1] * (F_ONE - r[i]);
-            if ((j << 1 | 1) < output_size)
-                output[j] = output[j] + output[j << 1 | 1] * (r[i]);
-        }
+        u32 half = whole >> 1;
+        auto &in = *cur;
+        auto &out = *nxt;
+        parallelFor(0, half, parallelThreadsFor(half), [&](u64 l, u64 hi) {
+            for (u64 j = l; j < hi; ++j) {
+                F v;
+                v.clear();
+                if ((j << 1) < output_size)
+                    v = in[j << 1] * (F_ONE - r[i]);
+                if (((j << 1) | 1) < output_size)
+                    v = v + in[(j << 1) | 1] * r[i];
+                out[j] = v;
+            }
+        });
+        std::swap(cur, nxt);
         whole >>= 1;
     }
-    F res = output[0];
+    F res = (*cur)[0];
 
     prove_timer.stop();
     proof_size += F_BYTE_SIZE;

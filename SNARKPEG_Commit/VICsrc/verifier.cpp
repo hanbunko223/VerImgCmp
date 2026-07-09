@@ -35,40 +35,71 @@ static void predicateDctqPhase2(const layer &cur_layer,
     const u32 width = cur_layer.dctq_width;
     const u32 height = cur_layer.dctq_height;
     const u32 block = cur_layer.dctq_block;
+    std::mutex bin_mutex;
 
+    // Each case reduces into a single bin_value slot, so every thread
+    // accumulates into a private `local` and merges once per chunk.
     switch (cur_layer.specialization) {
-        case layerSpecialization::DctqLeft:
-            for (u32 br = 0; br < height; br += block)
-                for (u32 c = 0; c < width; ++c)
-                    for (u32 r = 0; r < block; ++r) {
-                        const F &bg = beta_g[dctqMatIdx(br + r, c, width)];
-                        for (u32 k = 0; k < block; ++k) {
-                            u32 u = dctqMatIdx(br + k, c, width);
-                            u32 v = dctqMatIdx(r, k, block);
-                            bin_value[0] = bin_value[0] + bg * beta_u[u] * beta_v[v];
+        case layerSpecialization::DctqLeft: {
+            u32 blocks = height / block;
+            parallelFor(0, blocks, parallelThreadsFor((u64) height * width), [&](u64 b0, u64 b1) {
+                F local;
+                local.clear();
+                for (u64 bi = b0; bi < b1; ++bi) {
+                    u32 br = (u32) bi * block;
+                    for (u32 c = 0; c < width; ++c)
+                        for (u32 r = 0; r < block; ++r) {
+                            const F &bg = beta_g[dctqMatIdx(br + r, c, width)];
+                            for (u32 k = 0; k < block; ++k) {
+                                u32 u = dctqMatIdx(br + k, c, width);
+                                u32 v = dctqMatIdx(r, k, block);
+                                local = local + bg * beta_u[u] * beta_v[v];
+                            }
                         }
-                    }
-            break;
-        case layerSpecialization::DctqRight:
-            for (u32 r = 0; r < height; ++r)
-                for (u32 bc = 0; bc < width; bc += block)
-                    for (u32 c = 0; c < block; ++c) {
-                        const F &bg = beta_g[dctqMatIdx(r, bc + c, width)];
-                        for (u32 k = 0; k < block; ++k) {
-                            u32 u = dctqMatIdx(r, bc + k, width);
-                            u32 v = dctqMatIdx(c, k, block);
-                            bin_value[2] = bin_value[2] + bg * beta_u[u] * beta_v[v];
-                        }
-                    }
-            break;
-        case layerSpecialization::DctqHadamard:
-            for (u32 r = 0; r < height; ++r)
-                for (u32 c = 0; c < width; ++c) {
-                    u32 u = dctqMatIdx(r, c, width);
-                    u32 v = dctqMatIdx(r % block, c % block, block);
-                    bin_value[2] = bin_value[2] + beta_g[u] * beta_u[u] * beta_v[v];
                 }
+                std::lock_guard<std::mutex> lock(bin_mutex);
+                bin_value[0] = bin_value[0] + local;
+            });
             break;
+        }
+        case layerSpecialization::DctqRight: {
+            parallelFor(0, height, parallelThreadsFor((u64) height * width), [&](u64 r0, u64 r1) {
+                F local;
+                local.clear();
+                for (u64 rr = r0; rr < r1; ++rr) {
+                    u32 r = (u32) rr;
+                    for (u32 bc = 0; bc < width; bc += block)
+                        for (u32 c = 0; c < block; ++c) {
+                            const F &bg = beta_g[dctqMatIdx(r, bc + c, width)];
+                            for (u32 k = 0; k < block; ++k) {
+                                u32 u = dctqMatIdx(r, bc + k, width);
+                                u32 v = dctqMatIdx(c, k, block);
+                                local = local + bg * beta_u[u] * beta_v[v];
+                            }
+                        }
+                }
+                std::lock_guard<std::mutex> lock(bin_mutex);
+                bin_value[2] = bin_value[2] + local;
+            });
+            break;
+        }
+        case layerSpecialization::DctqHadamard: {
+            parallelFor(0, height, parallelThreadsFor((u64) height * width), [&](u64 r0, u64 r1) {
+                F local;
+                local.clear();
+                for (u64 rr = r0; rr < r1; ++rr) {
+                    u32 r = (u32) rr;
+                    for (u32 c = 0; c < width; ++c) {
+                        u32 u = dctqMatIdx(r, c, width);
+                        u32 v = dctqMatIdx(r % block, c % block, block);
+                        local = local + beta_g[u] * beta_u[u] * beta_v[v];
+                    }
+                }
+                std::lock_guard<std::mutex> lock(bin_mutex);
+                bin_value[2] = bin_value[2] + local;
+            });
+            break;
+        }
         case layerSpecialization::None:
             break;
     }
@@ -108,25 +139,25 @@ void verifier::betaInitPhase1(u8 depth, const F &alpha, const F &beta, const vec
             beta_gs.resize(1ULL << fft_bl);
             phiGInit(beta_gs, r_0, C.circuit[depth].scale, fft_bl, C.circuit[depth].ty == layerType::IFFT);
             beta_u.resize(1ULL << C.circuit[depth].max_bl_u);
-            initBetaTable(beta_u, C.circuit[depth].max_bl_u, r_u[depth].begin(), F_ONE);
+            initBetaTable(beta_u, C.circuit[depth].max_bl_u, r_u[depth].begin(), F_ONE, (int) hwThreads());
             break;
         case layerType::PADDING:
             beta_g.resize(1ULL << bl);
             beta_gs.resize(1ULL << fft_blh);
-            initBetaTable(beta_g, bl - fft_blh, r_u[depth + 2].begin() + fft_bl, r_v[depth + 2].begin(), alpha, beta);
-            initBetaTable(beta_gs, fft_blh, r_0, F_ONE);
+            initBetaTable(beta_g, bl - fft_blh, r_u[depth + 2].begin() + fft_bl, r_v[depth + 2].begin(), alpha, beta, (int) hwThreads());
+            initBetaTable(beta_gs, fft_blh, r_0, F_ONE, (int) hwThreads());
             for (u32 g = (1ULL << bl) - 1; g < (1ULL << bl); --g)
                 beta_g[g] = beta_g[g >> fft_blh] *
                             beta_gs[g & (1ULL << fft_blh) - 1];
             beta_u.resize(1ULL << C.circuit[depth].max_bl_u);
-            initBetaTable(beta_u, C.circuit[depth].max_bl_u, r_u[depth].begin(), F_ONE);
+            initBetaTable(beta_u, C.circuit[depth].max_bl_u, r_u[depth].begin(), F_ONE, (int) hwThreads());
             break;
         case layerType::DOT_PROD:
             beta_g.resize(1ULL << cnt_bl);
-            initBetaTable(beta_g, cnt_bl, r_u[depth + 2].begin() + fft_bl - 1, alpha);
+            initBetaTable(beta_g, cnt_bl, r_u[depth + 2].begin() + fft_bl - 1, alpha, (int) hwThreads());
 
             beta_u.resize(1ULL << cnt_bl2);
-            initBetaTable(beta_u, cnt_bl2, r_u[depth].begin() + fft_bl, F_ONE);
+            initBetaTable(beta_u, cnt_bl2, r_u[depth].begin() + fft_bl, F_ONE, (int) hwThreads());
             for (u32 i = 0; i < 1ULL << cnt_bl2; ++i)
                 for (u32 j = 0; j < fft_bl; ++j)
                     beta_u[i] = beta_u[i] * ((r_0[j] * r_u[depth][j]) + (F_ONE - r_0[j]) * (F_ONE - r_u[depth][j]));
@@ -135,18 +166,18 @@ void verifier::betaInitPhase1(u8 depth, const F &alpha, const F &beta, const vec
         default:
             beta_g.resize(1ULL << bl);
             initBetaTable(beta_g, C.circuit[depth].bit_length, r_0, r_1, alpha * C.circuit[depth].scale,
-                          beta * C.circuit[depth].scale);
+                          beta * C.circuit[depth].scale, (int) hwThreads());
             if (C.circuit[depth].zero_start_id < C.circuit[depth].size)
                 for (u32 g = C.circuit[depth].zero_start_id; g < 1ULL << C.circuit[depth].bit_length; ++g)
                     beta_g[g] = beta_g[g] * relu_rou;
             beta_u.resize(1ULL << C.circuit[depth].max_bl_u);
-            initBetaTable(beta_u, C.circuit[depth].max_bl_u, r_u[depth].begin(), F_ONE);
+            initBetaTable(beta_u, C.circuit[depth].max_bl_u, r_u[depth].begin(), F_ONE, (int) hwThreads());
     }
 }
 
 void verifier::betaInitPhase2(u8 depth) {
     beta_v.resize(1ULL << C.circuit[depth].max_bl_v);
-    initBetaTable(beta_v, C.circuit[depth].max_bl_v, r_v[depth].begin(), F_ONE);
+    initBetaTable(beta_v, C.circuit[depth].max_bl_v, r_v[depth].begin(), F_ONE, (int) hwThreads());
 }
 
 void verifier::predicatePhase1(u8 layer_id) {
@@ -366,18 +397,18 @@ bool verifier::verifyFirstLayer() {
     beta_g.resize(1ULL << cur.bit_length);
 
     total_slow_timer.start();
-    initBetaTable(beta_g, cur.bit_length, r_0, F_ONE);
+    initBetaTable(beta_g, cur.bit_length, r_0, F_ONE, (int) hwThreads());
     for (int i = 1; i < C.size; ++i) {
         if (~C.circuit[i].bit_length_u[0]) {
             beta_u.resize(1ULL << C.circuit[i].bit_length_u[0]);
-            initBetaTable(beta_u, C.circuit[i].bit_length_u[0], r_u[i].begin(), sig_u[i - 1]);
+            initBetaTable(beta_u, C.circuit[i].bit_length_u[0], r_u[i].begin(), sig_u[i - 1], (int) hwThreads());
             for (u32 j = 0; j < C.circuit[i].size_u[0]; ++j)
                 gr = gr + beta_g[C.circuit[i].ori_id_u[j]] * beta_u[j];
         }
 
         if (~C.circuit[i].bit_length_v[0]) {
             beta_v.resize(1ULL << C.circuit[i].bit_length_v[0]);
-            initBetaTable(beta_v, C.circuit[i].bit_length_v[0], r_v[i].begin(), sig_v[i - 1]);
+            initBetaTable(beta_v, C.circuit[i].bit_length_v[0], r_v[i].begin(), sig_v[i - 1], (int) hwThreads());
             for (u32 j = 0; j < C.circuit[i].size_v[0]; ++j)
                 gr = gr + beta_g[C.circuit[i].ori_id_v[j]] * beta_v[j];
         }
