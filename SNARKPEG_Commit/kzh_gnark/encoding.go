@@ -118,37 +118,42 @@ func writeSRS(path string, srs *kzh4SRS) error {
 		}
 	}
 
-	if err := writeG1Slice(writer, srs.HXYZT); err != nil {
+	if err := writeG1SliceRaw(writer, srs.HXYZT); err != nil {
 		return err
 	}
-	if err := writeG1Slice(writer, srs.HYZT); err != nil {
+	if err := writeG1SliceRaw(writer, srs.HYZT); err != nil {
 		return err
 	}
-	if err := writeG1Slice(writer, srs.HZT); err != nil {
+	if err := writeG1SliceRaw(writer, srs.HZT); err != nil {
 		return err
 	}
-	if err := writeG1Slice(writer, srs.HT); err != nil {
+	if err := writeG1SliceRaw(writer, srs.HT); err != nil {
 		return err
 	}
-	if err := writeG2Slice(writer, srs.VX); err != nil {
+	if err := writeG2SliceRaw(writer, srs.VX); err != nil {
 		return err
 	}
-	if err := writeG2Slice(writer, srs.VY); err != nil {
+	if err := writeG2SliceRaw(writer, srs.VY); err != nil {
 		return err
 	}
-	if err := writeG2Slice(writer, srs.VZ); err != nil {
+	if err := writeG2SliceRaw(writer, srs.VZ); err != nil {
 		return err
 	}
-	if err := writeG2Slice(writer, srs.VT); err != nil {
+	if err := writeG2SliceRaw(writer, srs.VT); err != nil {
 		return err
 	}
-	if err := writeG2(writer, srs.V); err != nil {
+	if err := writeG2Raw(writer, srs.V); err != nil {
 		return err
 	}
 	return writer.Flush()
 }
 
-func readSRS(path string) (*kzh4SRS, error) {
+// trustSRS skips per-point subgroup checks while loading -- safe only when
+// the SRS is setup material this same process (or an equally trusted local
+// pipeline) produced, never for an SRS obtained from another party. See the
+// readG1SliceTrusted doc comment for why this doesn't weaken soundness in
+// that case.
+func readSRS(path string, trustSRS bool) (*kzh4SRS, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -181,18 +186,129 @@ func readSRS(path string) (*kzh4SRS, error) {
 		return nil, err
 	}
 
-	hXYZT, err := readG1Slice(reader)
+	readG1s := readG1Slice
+	readG2s := readG2Slice
+	readG2p := readG2
+	if trustSRS {
+		readG1s = readG1SliceTrusted
+		readG2s = readG2SliceTrusted
+		readG2p = readG2Trusted
+	}
+
+	hXYZT, err := readG1s(reader)
 	if err != nil {
 		return nil, err
 	}
-	hYZT, err := readG1Slice(reader)
+	hYZT, err := readG1s(reader)
 	if err != nil {
 		return nil, err
 	}
-	hZT, err := readG1Slice(reader)
+	hZT, err := readG1s(reader)
 	if err != nil {
 		return nil, err
 	}
+	hT, err := readG1s(reader)
+	if err != nil {
+		return nil, err
+	}
+	vX, err := readG2s(reader)
+	if err != nil {
+		return nil, err
+	}
+	vY, err := readG2s(reader)
+	if err != nil {
+		return nil, err
+	}
+	vZ, err := readG2s(reader)
+	if err != nil {
+		return nil, err
+	}
+	vT, err := readG2s(reader)
+	if err != nil {
+		return nil, err
+	}
+	v, err := readG2p(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return &kzh4SRS{
+		DegreeX: int(degreeX),
+		DegreeY: int(degreeY),
+		DegreeZ: int(degreeZ),
+		DegreeT: int(degreeT),
+		HXYZT:   hXYZT,
+		HYZT:    hYZT,
+		HZT:     hZT,
+		HT:      hT,
+		VX:      vX,
+		VY:      vY,
+		VZ:      vZ,
+		VT:      vT,
+		V:       v,
+	}, nil
+}
+
+// readVerifierSRS loads only the SRS fields verify() actually uses: HT,
+// VX, VY, VZ, V (see kzh4.go -- commit/open touch HXYZT/HYZT/HZT, verify
+// never does). For any real circuit size those three skipped arrays are
+// almost the entire file: HXYZT alone holds DegreeX*DegreeY*DegreeZ*DegreeT
+// points, versus HT/VX/VY/VZ/V which scale with the sum of the degrees, not
+// their product. Rather than decode-and-discard them, seek straight past
+// their bytes -- computable exactly because the SRS uses fixed-size raw
+// (uncompressed) point encoding with a 4-byte length prefix per slice, so
+// each skipped section's byte length follows directly from the degree
+// header read at the top of the file. This keeps verify() strict
+// (subgroup-checked), matching readSRS's non-trusted path.
+func readVerifierSRS(path string) (*kzh4SRS, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	header := bufio.NewReader(file)
+	magic := make([]byte, len(srsMagic))
+	if _, err := io.ReadFull(header, magic); err != nil {
+		return nil, err
+	}
+	if string(magic) != srsMagic {
+		return nil, fmt.Errorf("invalid SRS magic: %q", string(magic))
+	}
+
+	degreeX, err := readU64(header)
+	if err != nil {
+		return nil, err
+	}
+	degreeY, err := readU64(header)
+	if err != nil {
+		return nil, err
+	}
+	degreeZ, err := readU64(header)
+	if err != nil {
+		return nil, err
+	}
+	degreeT, err := readU64(header)
+	if err != nil {
+		return nil, err
+	}
+
+	const lenPrefixBytes = 4
+	pointBytes := int64(bls12381.SizeOfG1AffineUncompressed)
+	hxyztBytes := lenPrefixBytes + int64(degreeX)*int64(degreeY)*int64(degreeZ)*int64(degreeT)*pointBytes
+	hyztBytes := lenPrefixBytes + int64(degreeY)*int64(degreeZ)*int64(degreeT)*pointBytes
+	hztBytes := lenPrefixBytes + int64(degreeZ)*int64(degreeT)*pointBytes
+	headerBytes := int64(len(srsMagic)) + 4*8 // magic + 4 uint64 degrees
+
+	// Seek on the file itself (not `header`, whose bufio buffer may already
+	// hold bytes past our logical read position) to an absolute offset, so
+	// there's no ambiguity from buffered-but-unconsumed bytes.
+	htOffset := headerBytes + hxyztBytes + hyztBytes + hztBytes
+	if _, err := file.Seek(htOffset, io.SeekStart); err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(file)
+
 	hT, err := readG1Slice(reader)
 	if err != nil {
 		return nil, err
@@ -223,9 +339,6 @@ func readSRS(path string) (*kzh4SRS, error) {
 		DegreeY: int(degreeY),
 		DegreeZ: int(degreeZ),
 		DegreeT: int(degreeT),
-		HXYZT:   hXYZT,
-		HYZT:    hYZT,
-		HZT:     hZT,
 		HT:      hT,
 		VX:      vX,
 		VY:      vY,
@@ -395,88 +508,105 @@ func readFrBigEndianSlice(reader io.Reader) ([]fr.Element, error) {
 	return values, nil
 }
 
+// Point (de)serialization delegates to gnark-crypto's own Encoder/Decoder
+// rather than hand-rolling per-point loops. This matters far more on the
+// read side: decompressing a point (recovering Y from a compressed X)
+// needs a field square root, so a naive serial loop over an SRS with
+// millions of points dominates prove/verify wall-clock time even though
+// none of that shows up in the timed section. gnark-crypto's Decoder does
+// the cheap per-point byte reads serially but runs the expensive Y
+// recovery through its internal worker pool (parallel.Execute), so
+// swapping in the library's codec parallelizes the actual bottleneck for
+// free. Compression (write side) doesn't need a square root, so it's
+// cheap either way.
 func writeG1(writer io.Writer, point bls12381.G1Affine) error {
-	buf := point.Bytes()
-	_, err := writer.Write(buf[:])
-	return err
+	return bls12381.NewEncoder(writer).Encode(&point)
 }
 
 func readG1(reader io.Reader) (bls12381.G1Affine, error) {
 	var point bls12381.G1Affine
-	buf := make([]byte, bls12381.SizeOfG1AffineCompressed)
-	if _, err := io.ReadFull(reader, buf); err != nil {
-		return point, err
-	}
-	_, err := point.SetBytes(buf)
+	err := bls12381.NewDecoder(reader).Decode(&point)
 	return point, err
 }
 
 func writeG2(writer io.Writer, point bls12381.G2Affine) error {
-	buf := point.Bytes()
-	_, err := writer.Write(buf[:])
-	return err
+	return bls12381.NewEncoder(writer).Encode(&point)
 }
 
 func readG2(reader io.Reader) (bls12381.G2Affine, error) {
 	var point bls12381.G2Affine
-	buf := make([]byte, bls12381.SizeOfG2AffineCompressed)
-	if _, err := io.ReadFull(reader, buf); err != nil {
-		return point, err
-	}
-	_, err := point.SetBytes(buf)
+	err := bls12381.NewDecoder(reader).Decode(&point)
 	return point, err
 }
 
 func writeG1Slice(writer io.Writer, points []bls12381.G1Affine) error {
-	if err := writeU64(writer, uint64(len(points))); err != nil {
-		return err
-	}
-	for i := range points {
-		if err := writeG1(writer, points[i]); err != nil {
-			return err
-		}
-	}
-	return nil
+	return bls12381.NewEncoder(writer).Encode(points)
 }
 
 func readG1Slice(reader io.Reader) ([]bls12381.G1Affine, error) {
-	length, err := readU64(reader)
-	if err != nil {
-		return nil, err
-	}
-	points := make([]bls12381.G1Affine, int(length))
-	for i := range points {
-		points[i], err = readG1(reader)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return points, nil
+	var points []bls12381.G1Affine
+	err := bls12381.NewDecoder(reader).Decode(&points)
+	return points, err
 }
 
 func writeG2Slice(writer io.Writer, points []bls12381.G2Affine) error {
-	if err := writeU64(writer, uint64(len(points))); err != nil {
-		return err
-	}
-	for i := range points {
-		if err := writeG2(writer, points[i]); err != nil {
-			return err
-		}
-	}
-	return nil
+	return bls12381.NewEncoder(writer).Encode(points)
 }
 
 func readG2Slice(reader io.Reader) ([]bls12381.G2Affine, error) {
-	length, err := readU64(reader)
-	if err != nil {
-		return nil, err
-	}
-	points := make([]bls12381.G2Affine, int(length))
-	for i := range points {
-		points[i], err = readG2(reader)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return points, nil
+	var points []bls12381.G2Affine
+	err := bls12381.NewDecoder(reader).Decode(&points)
+	return points, err
+}
+
+// Raw (uncompressed) variants: used only for the SRS, never for the
+// artifact (opening proof), whose compressed size is a metric this
+// project reports. Decode() auto-detects compressed vs. raw from each
+// point's leading metadata byte, so the read side doesn't need a matching
+// "raw" mode -- readG1Slice/readG2Slice/readG2 already handle both. The
+// SRS is setup material, read on every prove/verify call but written once
+// and never treated as "the proof", so trading disk space (~2x) to skip
+// the compressed format's per-point square root entirely on every load is
+// a clear win: the SRS holds millions of points, and reconstructing Y from
+// a compressed X is far more expensive than just storing it, even with
+// the decompression parallelized across cores.
+func writeG1SliceRaw(writer io.Writer, points []bls12381.G1Affine) error {
+	return bls12381.NewEncoder(writer, bls12381.RawEncoding()).Encode(points)
+}
+
+func writeG2SliceRaw(writer io.Writer, points []bls12381.G2Affine) error {
+	return bls12381.NewEncoder(writer, bls12381.RawEncoding()).Encode(points)
+}
+
+func writeG2Raw(writer io.Writer, point bls12381.G2Affine) error {
+	return bls12381.NewEncoder(writer, bls12381.RawEncoding()).Encode(&point)
+}
+
+// Trusted (subgroup-check-skipping) SRS readers. Subgroup checks guard
+// against a point that was substituted from outside the curve's intended
+// prime-order subgroup -- they say nothing about whether the SRS itself is
+// a genuine, honestly-generated set of monomials (that's what a trusted
+// setup ceremony is for). setup() derives every SRS point as a scalar
+// multiple of a subgroup generator, so its output is in-subgroup by
+// construction; a check here would only reconfirm that on every load, at
+// real cost (this is most of what "SRS load" time is). Used only for
+// reading the SRS (setup material produced by this same, un-adversarial
+// process) -- never for the artifact/opening, which is the actual
+// prover-controlled input a verifier must not trust blindly.
+func readG1SliceTrusted(reader io.Reader) ([]bls12381.G1Affine, error) {
+	var points []bls12381.G1Affine
+	err := bls12381.NewDecoder(reader, bls12381.NoSubgroupChecks()).Decode(&points)
+	return points, err
+}
+
+func readG2SliceTrusted(reader io.Reader) ([]bls12381.G2Affine, error) {
+	var points []bls12381.G2Affine
+	err := bls12381.NewDecoder(reader, bls12381.NoSubgroupChecks()).Decode(&points)
+	return points, err
+}
+
+func readG2Trusted(reader io.Reader) (bls12381.G2Affine, error) {
+	var point bls12381.G2Affine
+	err := bls12381.NewDecoder(reader, bls12381.NoSubgroupChecks()).Decode(&point)
+	return point, err
 }

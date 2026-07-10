@@ -87,10 +87,14 @@ func commandProve(args []string) error {
 		return err
 	}
 
-	srs, err := readSRS(srsPath)
+	loadStart := time.Now()
+	// Trusted: this SRS is setup material produced by this same pipeline
+	// (see readSRS's doc comment), not an input from another party.
+	srs, err := readSRS(srsPath, true)
 	if err != nil {
 		return err
 	}
+	srsLoadElapsed := time.Since(loadStart).Seconds()
 	polyValues, err := readScalarVectorCxx(polyPath)
 	if err != nil {
 		return err
@@ -101,6 +105,7 @@ func commandProve(args []string) error {
 	}
 	reverseScalars(point)
 	poly := newMultilinearPolynomial(polyValues)
+	inputLoadElapsed := time.Since(loadStart).Seconds() - srsLoadElapsed
 
 	start := time.Now()
 	commitment, aux, err := commit(srs, poly)
@@ -118,10 +123,12 @@ func commandProve(args []string) error {
 	}
 	commitmentSize, openingSize := proofSizeBytes(commitment, opening)
 	return writeMetrics(metricsPath, map[string]string{
-		"prove_time_sec":       formatFloat(elapsed),
-		"proof_size_bytes":     strconv.FormatUint(commitmentSize+openingSize, 10),
+		"prove_time_sec":        formatFloat(elapsed),
+		"srs_load_time_sec":     formatFloat(srsLoadElapsed),
+		"input_load_time_sec":   formatFloat(inputLoadElapsed),
+		"proof_size_bytes":      strconv.FormatUint(commitmentSize+openingSize, 10),
 		"commitment_size_bytes": strconv.FormatUint(commitmentSize, 10),
-		"opening_size_bytes":   strconv.FormatUint(openingSize, 10),
+		"opening_size_bytes":    strconv.FormatUint(openingSize, 10),
 	})
 }
 
@@ -151,10 +158,18 @@ func commandVerify(args []string) (retErr error) {
 		return err
 	}
 
-	srs, err := readSRS(srsPath)
+	loadStart := time.Now()
+	// verify() only ever reads HT/VX/VY/VZ/V (see kzh4.go), never
+	// HXYZT/HYZT/HZT -- readVerifierSRS seeks past those instead of
+	// decoding them, and keeps subgroup checks on for the fields it does
+	// read (unlike prove, a verifier is the party meant to distrust its
+	// inputs, and may in the future be pointed at an SRS this process
+	// didn't generate itself).
+	srs, err := readVerifierSRS(srsPath)
 	if err != nil {
 		return err
 	}
+	srsLoadElapsed := time.Since(loadStart).Seconds()
 	point, err := readScalarVectorCxx(pointPath)
 	if err != nil {
 		return err
@@ -168,6 +183,7 @@ func commandVerify(args []string) (retErr error) {
 	if err != nil {
 		return err
 	}
+	inputLoadElapsed := time.Since(loadStart).Seconds() - srsLoadElapsed
 
 	start := time.Now()
 	defer func() {
@@ -175,7 +191,9 @@ func commandVerify(args []string) (retErr error) {
 			retErr = fmt.Errorf("panic during KZH4 verify: %v", r)
 		}
 		if metricsErr := writeMetrics(metricsPath, map[string]string{
-			"verify_time_sec": formatFloat(time.Since(start).Seconds()),
+			"verify_time_sec":     formatFloat(time.Since(start).Seconds()),
+			"srs_load_time_sec":   formatFloat(srsLoadElapsed),
+			"input_load_time_sec": formatFloat(inputLoadElapsed),
 		}); metricsErr != nil && retErr == nil {
 			retErr = metricsErr
 		}

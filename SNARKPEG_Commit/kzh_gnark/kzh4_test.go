@@ -183,7 +183,7 @@ func TestRustCrossCheckIfAvailable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	decodedSRS, err := readSRS(goSrs)
+	decodedSRS, err := readVerifierSRS(goSrs)
 	if err != nil {
 		t.Fatal(err)
 	}
