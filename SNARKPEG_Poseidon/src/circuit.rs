@@ -1,8 +1,9 @@
 use crate::{
     dctq::{d_matrix, q_matrix, DCTQ_BLOCKS_PER_STEP, DCTQ_BLOCK_SIZE, DCTQ_CHANNELS},
     hash::{
-        pack_step_chunks, pack_step_pixels, row_hashes_from_chunks, shift24_powers, step_digest,
-        PackedPixelsStep, Scalar, PACKED_CHUNKS_PER_ROW, PIXELS_PER_CHUNK, STEP_DIGEST_GROUPS,
+        pack_step_chunks, pack_step_pixels, reduce_row_hashes, row_hashes_from_chunks,
+        shift24_powers, PackedPixelsStep, Scalar, PACKED_CHUNKS_PER_ROW, PIXELS_PER_CHUNK,
+        STEP_DIGEST_GROUPS,
     },
     input::{DctqStep, Pixel, DCTQ_HD_WIDTH, DCTQ_STEP_ROWS},
     poseidon::{poseidon_hash_2_allocated, poseidon_hash_8_allocated},
@@ -27,10 +28,14 @@ impl PreparedStep {
         let packed_pixels = pack_step_pixels(&step);
         let packed_chunks = pack_step_chunks(&packed_pixels);
         let row_hashes = row_hashes_from_chunks(&packed_chunks);
+        // step_digest(&step) would redo the three lines above from scratch
+        // just to get here; reduce_row_hashes is the only work it adds on
+        // top of what we've already computed.
+        let step_digest = reduce_row_hashes(&row_hashes);
         Self {
             packed_pixels,
             row_hashes,
-            step_digest: step_digest(&step),
+            step_digest,
             step,
         }
     }

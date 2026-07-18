@@ -95,6 +95,7 @@ pub fn reduce_row_hashes(row_hashes: &[Scalar; DCTQ_STEP_ROWS]) -> Scalar {
     poseidon_hash_2(group_hashes)
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn step_digest(step: &DctqStep) -> Scalar {
     let packed_pixels = pack_step_pixels(step);
     let packed_chunks = pack_step_chunks(&packed_pixels);

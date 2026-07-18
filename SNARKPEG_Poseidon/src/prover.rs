@@ -5,6 +5,7 @@ use crate::{
     input::{resolution_spec, DctqInput, InputError, ResolutionSpec},
 };
 use ff::Field;
+use rayon::prelude::*;
 use nova_snark::{
     neutron::{decider::CompressedSNARK as NeutronCompressedSNARK, PublicParams, RecursiveSNARK},
     provider::ipa_pc::EvaluationEngine,
@@ -91,8 +92,12 @@ fn prepare_dctq_circuits(
             actual: steps.len(),
         });
     }
+    // Each step's preparation (pixel packing + Poseidon row hashing) is
+    // independent of every other step, so this parallelizes cleanly --
+    // unlike the recursive fold itself, which has to run one step at a
+    // time since each fold depends on the previous one's output.
     let prepared_steps = steps
-        .into_iter()
+        .into_par_iter()
         .map(PreparedStep::from_step)
         .collect::<Vec<_>>();
     let step_digests = prepared_steps
