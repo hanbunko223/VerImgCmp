@@ -1,0 +1,5 @@
+/target/
+/.elan
+/lean/.lake/
+/results/tmp/
+**/__pycache__/

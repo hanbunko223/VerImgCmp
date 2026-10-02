@@ -196,6 +196,9 @@ mod tests {
                 std::array::from_fn(|offset| row_hashes[group_idx * HASH8_INPUTS + offset]);
             poseidon_hash_8(&inputs)
         });
-        assert_eq!(reduce_row_hashes(&row_hashes), poseidon_hash_2(group_hashes));
+        assert_eq!(
+            reduce_row_hashes(&row_hashes),
+            poseidon_hash_2(group_hashes)
+        );
     }
 }

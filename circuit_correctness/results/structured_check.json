@@ -1,0 +1,325 @@
+{
+  "status": "pass",
+  "evidence": "Python structural comparison, not formal certification",
+  "rows_checked": 97630,
+  "outputs": [
+    97632,
+    77323,
+    2,
+    97633
+  ],
+  "poseidon_gadgets": [
+    {
+      "kind": "poseidon8",
+      "start": 77496,
+      "count": 388,
+      "output": 77887
+    },
+    {
+      "kind": "poseidon8",
+      "start": 77884,
+      "count": 388,
+      "output": 78275
+    },
+    {
+      "kind": "poseidon2",
+      "start": 78272,
+      "count": 238,
+      "output": 78513
+    },
+    {
+      "kind": "poseidon8",
+      "start": 78687,
+      "count": 388,
+      "output": 79078
+    },
+    {
+      "kind": "poseidon8",
+      "start": 79075,
+      "count": 388,
+      "output": 79466
+    },
+    {
+      "kind": "poseidon2",
+      "start": 79463,
+      "count": 238,
+      "output": 79704
+    },
+    {
+      "kind": "poseidon8",
+      "start": 79878,
+      "count": 388,
+      "output": 80269
+    },
+    {
+      "kind": "poseidon8",
+      "start": 80266,
+      "count": 388,
+      "output": 80657
+    },
+    {
+      "kind": "poseidon2",
+      "start": 80654,
+      "count": 238,
+      "output": 80895
+    },
+    {
+      "kind": "poseidon8",
+      "start": 81069,
+      "count": 388,
+      "output": 81460
+    },
+    {
+      "kind": "poseidon8",
+      "start": 81457,
+      "count": 388,
+      "output": 81848
+    },
+    {
+      "kind": "poseidon2",
+      "start": 81845,
+      "count": 238,
+      "output": 82086
+    },
+    {
+      "kind": "poseidon8",
+      "start": 82260,
+      "count": 388,
+      "output": 82651
+    },
+    {
+      "kind": "poseidon8",
+      "start": 82648,
+      "count": 388,
+      "output": 83039
+    },
+    {
+      "kind": "poseidon2",
+      "start": 83036,
+      "count": 238,
+      "output": 83277
+    },
+    {
+      "kind": "poseidon8",
+      "start": 83451,
+      "count": 388,
+      "output": 83842
+    },
+    {
+      "kind": "poseidon8",
+      "start": 83839,
+      "count": 388,
+      "output": 84230
+    },
+    {
+      "kind": "poseidon2",
+      "start": 84227,
+      "count": 238,
+      "output": 84468
+    },
+    {
+      "kind": "poseidon8",
+      "start": 84642,
+      "count": 388,
+      "output": 85033
+    },
+    {
+      "kind": "poseidon8",
+      "start": 85030,
+      "count": 388,
+      "output": 85421
+    },
+    {
+      "kind": "poseidon2",
+      "start": 85418,
+      "count": 238,
+      "output": 85659
+    },
+    {
+      "kind": "poseidon8",
+      "start": 85833,
+      "count": 388,
+      "output": 86224
+    },
+    {
+      "kind": "poseidon8",
+      "start": 86221,
+      "count": 388,
+      "output": 86612
+    },
+    {
+      "kind": "poseidon2",
+      "start": 86609,
+      "count": 238,
+      "output": 86850
+    },
+    {
+      "kind": "poseidon8",
+      "start": 87024,
+      "count": 388,
+      "output": 87415
+    },
+    {
+      "kind": "poseidon8",
+      "start": 87412,
+      "count": 388,
+      "output": 87803
+    },
+    {
+      "kind": "poseidon2",
+      "start": 87800,
+      "count": 238,
+      "output": 88041
+    },
+    {
+      "kind": "poseidon8",
+      "start": 88215,
+      "count": 388,
+      "output": 88606
+    },
+    {
+      "kind": "poseidon8",
+      "start": 88603,
+      "count": 388,
+      "output": 88994
+    },
+    {
+      "kind": "poseidon2",
+      "start": 88991,
+      "count": 238,
+      "output": 89232
+    },
+    {
+      "kind": "poseidon8",
+      "start": 89406,
+      "count": 388,
+      "output": 89797
+    },
+    {
+      "kind": "poseidon8",
+      "start": 89794,
+      "count": 388,
+      "output": 90185
+    },
+    {
+      "kind": "poseidon2",
+      "start": 90182,
+      "count": 238,
+      "output": 90423
+    },
+    {
+      "kind": "poseidon8",
+      "start": 90597,
+      "count": 388,
+      "output": 90988
+    },
+    {
+      "kind": "poseidon8",
+      "start": 90985,
+      "count": 388,
+      "output": 91376
+    },
+    {
+      "kind": "poseidon2",
+      "start": 91373,
+      "count": 238,
+      "output": 91614
+    },
+    {
+      "kind": "poseidon8",
+      "start": 91788,
+      "count": 388,
+      "output": 92179
+    },
+    {
+      "kind": "poseidon8",
+      "start": 92176,
+      "count": 388,
+      "output": 92567
+    },
+    {
+      "kind": "poseidon2",
+      "start": 92564,
+      "count": 238,
+      "output": 92805
+    },
+    {
+      "kind": "poseidon8",
+      "start": 92979,
+      "count": 388,
+      "output": 93370
+    },
+    {
+      "kind": "poseidon8",
+      "start": 93367,
+      "count": 388,
+      "output": 93758
+    },
+    {
+      "kind": "poseidon2",
+      "start": 93755,
+      "count": 238,
+      "output": 93996
+    },
+    {
+      "kind": "poseidon8",
+      "start": 94170,
+      "count": 388,
+      "output": 94561
+    },
+    {
+      "kind": "poseidon8",
+      "start": 94558,
+      "count": 388,
+      "output": 94949
+    },
+    {
+      "kind": "poseidon2",
+      "start": 94946,
+      "count": 238,
+      "output": 95187
+    },
+    {
+      "kind": "poseidon8",
+      "start": 95361,
+      "count": 388,
+      "output": 95752
+    },
+    {
+      "kind": "poseidon8",
+      "start": 95749,
+      "count": 388,
+      "output": 96140
+    },
+    {
+      "kind": "poseidon2",
+      "start": 96137,
+      "count": 238,
+      "output": 96378
+    },
+    {
+      "kind": "poseidon8",
+      "start": 96376,
+      "count": 388,
+      "output": 96767
+    },
+    {
+      "kind": "poseidon8",
+      "start": 96764,
+      "count": 388,
+      "output": 97155
+    },
+    {
+      "kind": "poseidon2",
+      "start": 97152,
+      "count": 238,
+      "output": 97393
+    },
+    {
+      "kind": "poseidon2",
+      "start": 97391,
+      "count": 238,
+      "output": 97632
+    }
+  ]
+}

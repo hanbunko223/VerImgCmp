@@ -1,5 +1,6 @@
 use crate::{
-    dctq::{d_matrix, q_matrix, DCTQ_BLOCKS_PER_STEP, DCTQ_BLOCK_SIZE, DCTQ_CHANNELS},
+    coefficient::ACTIVE_COEFFICIENTS_PER_STEP,
+    dctq::{d_matrix, q_value, row_active, DCTQ_BLOCKS_PER_STEP, DCTQ_BLOCK_SIZE, DCTQ_CHANNELS},
     hash::{
         pack_step_chunks, pack_step_pixels, reduce_row_hashes, row_hashes_from_chunks,
         shift24_powers, PackedPixelsStep, Scalar, PACKED_CHUNKS_PER_ROW, PIXELS_PER_CHUNK,
@@ -60,7 +61,7 @@ impl DctqStepCircuit {
 
 impl StepCircuit<Scalar> for DctqStepCircuit {
     fn arity(&self) -> usize {
-        1
+        4
     }
 
     fn synthesize<CS: ConstraintSystem<Scalar>>(
@@ -68,7 +69,11 @@ impl StepCircuit<Scalar> for DctqStepCircuit {
         cs: &mut CS,
         z: &[AllocatedNum<Scalar>],
     ) -> Result<Vec<AllocatedNum<Scalar>>, SynthesisError> {
-        assert_eq!(z.len(), 1, "dctq step circuit expects one rolling state");
+        assert_eq!(
+            z.len(),
+            4,
+            "dctq step circuit expects input hash, coefficient evaluation, challenge, and step counter"
+        );
 
         let step_channels = self
             .prepared
@@ -88,7 +93,12 @@ impl StepCircuit<Scalar> for DctqStepCircuit {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        enforce_dctq_layers(&mut cs.namespace(|| "dctq"), &step_channels)?;
+        let next_coefficient_evaluation = enforce_fused_dctq_evaluation(
+            &mut cs.namespace(|| "dctq_polynomial_evaluation"),
+            &step_channels,
+            z[1].clone(),
+            z[2].clone(),
+        )?;
 
         let row_hashes = step_channels
             .iter()
@@ -175,22 +185,37 @@ impl StepCircuit<Scalar> for DctqStepCircuit {
             "step_digest_matches_prepared",
         );
 
-        let next_state = poseidon_hash_2_allocated(
-            &mut cs.namespace(|| "state_transition"),
+        let next_input_state = poseidon_hash_2_allocated(
+            &mut cs.namespace(|| "input_state_transition"),
             [z[0].clone(), digest_allocated],
         )?;
 
-        Ok(vec![next_state])
+        let next_step = increment_allocated(&mut cs.namespace(|| "increment_step"), &z[3])?;
+
+        Ok(vec![
+            next_input_state,
+            next_coefficient_evaluation,
+            z[2].clone(),
+            next_step,
+        ])
     }
 }
 
-fn enforce_dctq_layers<CS: ConstraintSystem<Scalar>>(
+fn enforce_fused_dctq_evaluation<CS: ConstraintSystem<Scalar>>(
     cs: &mut CS,
     step_channels: &[Vec<[AllocatedNum<Scalar>; 3]>],
-) -> Result<(), SynthesisError> {
+    initial_accumulator: AllocatedNum<Scalar>,
+    challenge: AllocatedNum<Scalar>,
+) -> Result<AllocatedNum<Scalar>, SynthesisError> {
     debug_assert_eq!(step_channels.len(), DCTQ_STEP_ROWS);
     let d = d_matrix().expect("fixed DCT matrix must parse");
-    let q = q_matrix().expect("fixed quantization matrix must parse");
+    let mut left = (0..DCTQ_CHANNELS)
+        .map(|_| {
+            (0..DCTQ_STEP_ROWS)
+                .map(|_| vec![None; DCTQ_HD_WIDTH])
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
 
     for channel_idx in 0..DCTQ_CHANNELS {
         for block_row_idx in 0..(DCTQ_STEP_ROWS / DCTQ_BLOCK_SIZE) {
@@ -198,9 +223,10 @@ fn enforce_dctq_layers<CS: ConstraintSystem<Scalar>>(
             for block_idx in 0..DCTQ_BLOCKS_PER_STEP {
                 let block_col = block_idx * DCTQ_BLOCK_SIZE;
 
-                let mut left_block = Vec::with_capacity(DCTQ_BLOCK_SIZE);
                 for out_r in 0..DCTQ_BLOCK_SIZE {
-                    let mut row = Vec::with_capacity(DCTQ_BLOCK_SIZE);
+                    if !row_active(channel_idx, out_r) {
+                        continue;
+                    }
                     for col_offset in 0..DCTQ_BLOCK_SIZE {
                         let input_col = block_col + col_offset;
                         let inputs: [AllocatedNum<Scalar>; DCTQ_BLOCK_SIZE] =
@@ -216,51 +242,70 @@ fn enforce_dctq_layers<CS: ConstraintSystem<Scalar>>(
                             &inputs,
                             &d[out_r],
                         )?;
-                        row.push(output);
-                    }
-                    left_block.push(row);
-                }
-
-                let mut right_block = Vec::with_capacity(DCTQ_BLOCK_SIZE);
-                for row_idx in 0..DCTQ_BLOCK_SIZE {
-                    let mut row = Vec::with_capacity(DCTQ_BLOCK_SIZE);
-                    for out_c in 0..DCTQ_BLOCK_SIZE {
-                        let inputs: [AllocatedNum<Scalar>; DCTQ_BLOCK_SIZE] =
-                            std::array::from_fn(|k| left_block[row_idx][k].clone());
-                        let coeffs: [Scalar; DCTQ_BLOCK_SIZE] =
-                            std::array::from_fn(|k| d[k][out_c]);
-                        let output = allocate_linear_combination_output(
-                            &mut cs.namespace(|| {
-                                format!(
-                                    "channel_{channel_idx}_block_row_{block_row_idx}_block_{block_idx}_right_r_{row_idx}_c_{out_c}"
-                                )
-                            }),
-                            &inputs,
-                            &coeffs,
-                        )?;
-                        row.push(output);
-                    }
-                    right_block.push(row);
-                }
-
-                for row_idx in 0..DCTQ_BLOCK_SIZE {
-                    for col_idx in 0..DCTQ_BLOCK_SIZE {
-                        allocate_scaled_output(
-                            &mut cs.namespace(|| {
-                                format!(
-                                    "channel_{channel_idx}_block_row_{block_row_idx}_block_{block_idx}_dctq_r_{row_idx}_c_{col_idx}"
-                                )
-                            }),
-                            right_block[row_idx][col_idx].clone(),
-                            q[row_idx][col_idx],
-                        )?;
+                        left[channel_idx][block_row + out_r][input_col] = Some(output);
                     }
                 }
             }
         }
     }
 
-    Ok(())
+    let mut accumulator = initial_accumulator;
+    let mut active_count = 0usize;
+    for row_idx in 0..DCTQ_STEP_ROWS {
+        let local_row = row_idx % DCTQ_BLOCK_SIZE;
+        for col_idx in 0..DCTQ_HD_WIDTH {
+            let local_col = col_idx % DCTQ_BLOCK_SIZE;
+            let block_col = (col_idx / DCTQ_BLOCK_SIZE) * DCTQ_BLOCK_SIZE;
+            for channel_idx in 0..DCTQ_CHANNELS {
+                let q_coefficient = q_value(channel_idx, local_row, local_col);
+                if q_coefficient == Scalar::ZERO {
+                    continue;
+                }
+                let right_coefficients: [Scalar; DCTQ_BLOCK_SIZE] =
+                    std::array::from_fn(|k| q_coefficient * d[local_col][k]);
+                let left_inputs: [AllocatedNum<Scalar>; DCTQ_BLOCK_SIZE] =
+                    std::array::from_fn(|k| {
+                        left[channel_idx][row_idx][block_col + k]
+                            .as_ref()
+                            .expect("every first-stage DCT output is assigned")
+                            .clone()
+                    });
+                accumulator = allocate_fused_horner_output(
+                    &mut cs.namespace(|| {
+                        format!(
+                            "row_{row_idx}_col_{col_idx}_channel_{channel_idx}_fused_right_q_horner"
+                        )
+                    }),
+                    accumulator,
+                    challenge.clone(),
+                    &left_inputs,
+                    &right_coefficients,
+                )?;
+                active_count += 1;
+            }
+        }
+    }
+    debug_assert_eq!(active_count, ACTIVE_COEFFICIENTS_PER_STEP);
+    Ok(accumulator)
+}
+
+fn increment_allocated<CS: ConstraintSystem<Scalar>>(
+    cs: &mut CS,
+    value: &AllocatedNum<Scalar>,
+) -> Result<AllocatedNum<Scalar>, SynthesisError> {
+    let incremented = AllocatedNum::alloc(cs.namespace(|| "incremented"), || {
+        value
+            .get_value()
+            .ok_or(SynthesisError::AssignmentMissing)
+            .map(|value| value + Scalar::ONE)
+    })?;
+    cs.enforce(
+        || "increment by one".to_string(),
+        |lc| lc + value.get_variable() + CS::one() - incremented.get_variable(),
+        |lc| lc + CS::one(),
+        |lc| lc,
+    );
+    Ok(incremented)
 }
 
 fn allocate_pixel_channels_with_range_check<CS: ConstraintSystem<Scalar>>(
@@ -404,11 +449,12 @@ fn allocate_linear_combination_output<CS: ConstraintSystem<Scalar>, const N: usi
     inputs: &[AllocatedNum<Scalar>; N],
     coeffs: &[Scalar; N],
 ) -> Result<AllocatedNum<Scalar>, SynthesisError> {
+    let offset = -Scalar::from(128u64) * coeffs.iter().copied().sum::<Scalar>();
     let output = AllocatedNum::alloc(cs.namespace(|| "linear_output"), || {
         inputs
             .iter()
             .zip(coeffs.iter())
-            .try_fold(Scalar::ZERO, |acc, (input, coeff)| {
+            .try_fold(offset, |acc, (input, coeff)| {
                 input
                     .get_value()
                     .ok_or(SynthesisError::AssignmentMissing)
@@ -422,7 +468,7 @@ fn allocate_linear_combination_output<CS: ConstraintSystem<Scalar>, const N: usi
             inputs
                 .iter()
                 .zip(coeffs.iter())
-                .fold(lc, |lc_acc, (input, coeff)| {
+                .fold(lc + (offset, CS::one()), |lc_acc, (input, coeff)| {
                     lc_acc + (*coeff, input.get_variable())
                 })
                 - output.get_variable()
@@ -434,23 +480,41 @@ fn allocate_linear_combination_output<CS: ConstraintSystem<Scalar>, const N: usi
     Ok(output)
 }
 
-fn allocate_scaled_output<CS: ConstraintSystem<Scalar>>(
+fn allocate_fused_horner_output<CS: ConstraintSystem<Scalar>, const N: usize>(
     cs: &mut CS,
-    input: AllocatedNum<Scalar>,
-    coeff: Scalar,
+    accumulator: AllocatedNum<Scalar>,
+    challenge: AllocatedNum<Scalar>,
+    inputs: &[AllocatedNum<Scalar>; N],
+    coefficients: &[Scalar; N],
 ) -> Result<AllocatedNum<Scalar>, SynthesisError> {
-    let output = AllocatedNum::alloc(cs.namespace(|| "scaled_output"), || {
-        input
+    let output = AllocatedNum::alloc(cs.namespace(|| "horner_output"), || {
+        let product = accumulator
             .get_value()
-            .ok_or(SynthesisError::AssignmentMissing)
-            .map(|value| value * coeff)
+            .ok_or(SynthesisError::AssignmentMissing)?
+            * challenge
+                .get_value()
+                .ok_or(SynthesisError::AssignmentMissing)?;
+        inputs
+            .iter()
+            .zip(coefficients.iter())
+            .try_fold(product, |sum, (input, coefficient)| {
+                input
+                    .get_value()
+                    .ok_or(SynthesisError::AssignmentMissing)
+                    .map(|value| sum + (value * *coefficient))
+            })
     })?;
 
     cs.enforce(
-        || "scale_by_constant".to_string(),
-        |lc| lc + (coeff, input.get_variable()) - output.get_variable(),
-        |lc| lc + CS::one(),
-        |lc| lc,
+        || "fused_second_dct_q_and_horner".to_string(),
+        |lc| lc + accumulator.get_variable(),
+        |lc| lc + challenge.get_variable(),
+        |lc| {
+            inputs.iter().zip(coefficients.iter()).fold(
+                lc + output.get_variable(),
+                |lc_acc, (input, coefficient)| lc_acc - (*coefficient, input.get_variable()),
+            )
+        },
     );
 
     Ok(output)
@@ -494,6 +558,41 @@ mod tests {
         r1cs::R1CSShape,
         traits::snark::default_ck_hint,
     };
+
+    fn fused_horner_constraint_count(coefficient: u64) -> usize {
+        let mut shape_cs: ShapeCS<PallasEngine> = ShapeCS::new();
+        let accumulator =
+            AllocatedNum::alloc_infallible(shape_cs.namespace(|| "accumulator"), || {
+                Scalar::from(3u64)
+            });
+        let challenge = AllocatedNum::alloc_infallible(shape_cs.namespace(|| "challenge"), || {
+            Scalar::from(5u64)
+        });
+        let inputs = std::array::from_fn(|index| {
+            AllocatedNum::alloc_infallible(shape_cs.namespace(|| format!("input_{index}")), || {
+                Scalar::from((index + 1) as u64)
+            })
+        });
+        let coefficients = [Scalar::from(coefficient); DCTQ_BLOCK_SIZE];
+        allocate_fused_horner_output(
+            &mut shape_cs,
+            accumulator,
+            challenge,
+            &inputs,
+            &coefficients,
+        )
+        .unwrap();
+        shape_cs.r1cs_shape().unwrap().num_cons()
+    }
+
+    #[test]
+    fn constant_magnitude_does_not_change_fused_horner_cost() {
+        let one = fused_horner_constraint_count(1);
+        assert_eq!(one, 1);
+        assert_eq!(one, fused_horner_constraint_count(64));
+        assert_eq!(one, fused_horner_constraint_count(93));
+        assert_eq!(one, fused_horner_constraint_count(102));
+    }
 
     #[test]
     fn byte_range_check_rejects_out_of_range_witness() {

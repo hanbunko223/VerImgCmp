@@ -1,0 +1,291 @@
+{
+  "format": "poseidon97-final-validation-review-v1",
+  "reviewed_at_utc": "2026-09-28T13:43:34.403427+00:00",
+  "status": "review_complete_followups_pending",
+  "scope": "Read-only coverage review; only this report was written. No concurrent Lean build or Rust export was started.",
+  "acceptance_snapshot": {
+    "status": "pass",
+    "certified": true,
+    "mode": "full",
+    "artifact_only": false,
+    "checks": 19,
+    "all_exit_codes_zero": true,
+    "evidence": "results/verification.json",
+    "qualification": "Successful strict run predates the currently running clean build; parent will rerun strict acceptance afterward."
+  },
+  "coverage": {
+    "original_export": {
+      "status": "pass_in_recorded_run",
+      "implementation": "exporter/src/main.rs",
+      "evidence": [
+        "results/rust_export.log",
+        "results/rust_validation.json"
+      ],
+      "checks": [
+        "Direct path imports from original poseidon_97 production modules.",
+        "Actual DctqStepCircuit::synthesize invoked on 16x160 RGB PreparedStep.",
+        "TraceCS and separately synthesized plain ShapeCS rows and output-wire maps compared for equality.",
+        "Exact regenerated JSON values compared with step.json, trace.json and parameters.json under check-export; no export baseline replaced.",
+        "97630 constraints, 97634 auxiliary variables, one ShapeCS input, and challenge output alias asserted.",
+        "Source manifest rechecked before and after exporter execution."
+      ],
+      "trust_boundary": "Rust/compiler/environment, exporter and source-to-artifact/import mapping remain the accepted extraction boundary; no claim of Rust compiler or Nova correctness."
+    },
+    "artifact_identity_and_lean_import": {
+      "status": "pass_in_recorded_run",
+      "evidence": [
+        "results/artifact_validation.json",
+        "results/row_data_check.log",
+        "results/parameter_data_check.log"
+      ],
+      "row_sha256": "120153f7a3043425cc47718bbd175ac4f9c777cca833b4691f4f64d444393dd3",
+      "checks": [
+        "All 97630 rows and 7680 pixel-wire mappings validated.",
+        "Field modulus, counts, canonical coefficients, strictly ordered in-range indices, incoming/outgoing maps checked.",
+        "generate_rows.py --check reconstructs the lossless 32-bit-word encoding and compares exact ExportedData.lean contents.",
+        "Parameter and all seven certificate-generator --check commands are included in strict verification."
+      ],
+      "baseline_file_hashes": {
+        "artifacts/parameters.json": {
+          "sha256": "4bd0b820ce5f9dfa38b42b2bb9ccf6a4587b458fb929e977afb3de45a5b11a51",
+          "matches_recorded_environment_baseline": true
+        },
+        "artifacts/source_manifest.json": {
+          "sha256": "bf357f11e8b1e8879e87218f232f0da4eb77990b4b53771d9efcca6ee9df051b",
+          "matches_recorded_environment_baseline": true
+        },
+        "artifacts/step.json": {
+          "sha256": "b224af7062f6d689449f1689bb91d8845de9fc77d3230919f99b6f22eda594d7",
+          "matches_recorded_environment_baseline": true
+        },
+        "artifacts/trace.json": {
+          "sha256": "56790c2dc34f128abae26e461ad1b671cc2d51b27ad1d9bcd1ef51715c34bd9c",
+          "matches_recorded_environment_baseline": true
+        }
+      }
+    },
+    "formal_gate": {
+      "status": "pass_in_recorded_run",
+      "evidence": [
+        "lean/Certification.lean",
+        "lean/CircuitCorrectness/Target.lean",
+        "lean/CircuitCorrectness/Complete.lean",
+        "results/full_axiom_audit.json"
+      ],
+      "exact_original_propositions": [
+        "CircuitCorrectness.Target.StepSoundness",
+        "CircuitCorrectness.Target.StepCompleteness",
+        "CircuitCorrectness.Target.OutputDeterminism"
+      ],
+      "principal_theorems": [
+        "CircuitCorrectness.Target.step_soundness",
+        "CircuitCorrectness.Target.step_completeness",
+        "CircuitCorrectness.Target.step_determinism",
+        "CircuitCorrectness.Target.connected_steps",
+        "CircuitCorrectness.Target.connected360"
+      ],
+      "checks": [
+        "Certification examples require the unchanged original universal target propositions.",
+        "Completeness constructs a Seed assignment extended by the verified actual suffix program and covers both the entire byte prefix and entire suffix.",
+        "ConnectedSteps explicitly connects adjacent incoming/outgoing states; connected360 is the 360-step specialization."
+      ],
+      "excluded_claims": [
+        "Nova folding or augmented circuit verification",
+        "Spartan or verifier correctness",
+        "cryptographic security and Fiat-Shamir",
+        "public-file parsing",
+        "universal Rust witness-generator correctness"
+      ]
+    },
+    "axiom_integrity": {
+      "status": "pass_for_recorded_lists",
+      "core_theorem_count": 69,
+      "full_theorem_count": 5,
+      "allowed_axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "evidence": [
+        "scripts/audit.py",
+        "results/axiom_dependencies.log",
+        "results/full_axiom_dependencies.log"
+      ],
+      "checks": [
+        "Transitive #print axioms output required for each exact expected theorem name.",
+        "Any unexpected axiom, missing theorem, duplicate/mismatched report, or Lean failure rejects the audit.",
+        "Only after Certification build, full audit and source recheck can verify.py write certified=true."
+      ]
+    },
+    "forbidden_source_scan": {
+      "status": "pass",
+      "files_scanned": 294,
+      "scope": "All local lean/*.lean and lean/CircuitCorrectness/**/*.lean; dependency/toolchain caches excluded.",
+      "method": "Nested comments and quoted strings removed by scripts/clean_build.py uncomment; regex token scan of remaining Lean source.",
+      "patterns": {
+        "proof_placeholder": "\\b(?:sorry|admit|sorryAx)\\b",
+        "compiler_trust_shortcut": "\\b(?:native_decide|ofReduceBool|ofReduceNat)\\b",
+        "custom_axiom_declaration": "\\baxiom\\b",
+        "implemented_by_attribute": "\\bimplemented_by\\b",
+        "unsafe_declaration": "\\bunsafe\\b"
+      },
+      "findings": [],
+      "qualification": "This review supplies the lexical scan. verify.py currently enforces the transitive axiom whitelist but has no separate lexical-scan step."
+    },
+    "mutation_and_differential_tests": {
+      "status": "pass_in_recorded_run",
+      "evidence": [
+        "results/artifact_validation.json",
+        "results/rust_validation.json",
+        "results/reference_validation.json",
+        "results/lean_differential.log",
+        "results/lean_certificate_rejection.log"
+      ],
+      "malformed_artifact_cases": 10,
+      "rust_fixture_count": 5,
+      "rust_adversarial_cases": 30,
+      "lean_rejection_modules": {
+        "CircuitCorrectness.ProgramCertificates.Rejection": [
+          "destination coefficient",
+          "future wire",
+          "row reordering"
+        ],
+        "CircuitCorrectness.DctProgramCertificates.Tests": [
+          "coefficient",
+          "constant-one wiring",
+          "first-stage output",
+          "retained ordering",
+          "Horner output"
+        ],
+        "CircuitCorrectness.HashWiringCertificates.Rejection": [
+          "swapped hash inputs",
+          "changed round constants"
+        ],
+        "CircuitCorrectness.PackingCertificates.Rejection": [
+          "pixel coefficient",
+          "pixel input wire",
+          "pixel output wire",
+          "pixel order",
+          "chunk coefficient"
+        ]
+      },
+      "output_mapping_test": "validate_artifacts.py output_wire mutation rejects an altered exported output map.",
+      "qualification": "Regression evidence is explicitly separate from universal Lean certification."
+    },
+    "source_preservation": {
+      "status": "pass_for_pinned_manifest",
+      "current_read_only_check": {
+        "status": "pass",
+        "files_checked": 106
+      },
+      "recorded_before": {
+        "status": "pass",
+        "files_checked": 106
+      },
+      "recorded_after": {
+        "status": "pass",
+        "files_checked": 106
+      },
+      "baseline_manifest_sha256": "bf357f11e8b1e8879e87218f232f0da4eb77990b4b53771d9efcca6ee9df051b",
+      "baseline_manifest_matches_environment": true,
+      "protected_projects": [
+        "nova60/Nova",
+        "poseidon_97"
+      ],
+      "limitation": "The baseline inventories original poseidon_97 and nova60/Nova source files plus their Cargo/build files. It does not independently fingerprint poseidon_97_180 or every other proof-project directory; do not describe the 106-file check as a whole-workspace fingerprint comparison."
+    },
+    "standalone_and_clean_build": {
+      "status": "pending_clean_completion",
+      "evidence": [
+        "scripts/clean_build.py",
+        "results/clean_certification.resources.json",
+        "lean/Certification.lean"
+      ],
+      "clean_snapshot": {
+        "status": "running",
+        "clean_performed": true,
+        "targets": [
+          "Certification"
+        ],
+        "module_count": 280,
+        "completed_module_count": 42
+      },
+      "checks": [
+        "Certification uses committed local Lean data, mathematical image/state functions and cached pinned Lean/mathlib dependencies.",
+        "No private image or Nova prover invocation is required by the standalone Certification target.",
+        "Clean runner deletes only lean/.lake/build, preserves cached packages/toolchain, fingerprints every local module/configuration, and records wall time and child high-water RSS."
+      ],
+      "qualification": "Do not use the running report as final successful clean-build measurement. RSS is maximum accounted child high-water mark, not total simultaneous-process memory."
+    }
+  },
+  "findings_and_followups": [
+    {
+      "id": "bounded_integer_axiom_coverage",
+      "priority": "required_before_final",
+      "status": "open",
+      "finding": "Separate required bounded-integer interpretation results are not in the current 69-theorem explicit audit and need not be transitive dependencies of the field-valued full-step theorem.",
+      "recommended_additions": [
+        "CircuitCorrectness.DctSpec.coefficient_bounds",
+        "CircuitCorrectness.DctSpec.coefficient_global_bounds",
+        "CircuitCorrectness.DctSpec.bounded_cast_injective",
+        "CircuitCorrectness.DctSpec.coefficient_cast_injective",
+        "CircuitCorrectness.DctSpec.packedPixel_bound",
+        "CircuitCorrectness.DctSpec.packedChunk_bound",
+        "CircuitCorrectness.DctSpec.packedChunk_field_bound",
+        "CircuitCorrectness.DctSpec.packedChunk_cast_value"
+      ],
+      "optional_additions": [
+        "CircuitCorrectness.DctSpec.first_row_pruning",
+        "CircuitCorrectness.DctSpec.omitted_zero"
+      ],
+      "action": "After the active clean build, add these names to ordinary audit.py THEOREMS, run audit, and rerun strict verification. No mathematical theorem change is requested."
+    },
+    {
+      "id": "clean_build_and_final_recheck",
+      "priority": "required_before_final",
+      "status": "in_progress",
+      "finding": "Clean Certification build is running; recorded strict acceptance pass is from before that run.",
+      "action": "Require clean build success, capture final resource semantics, rerun strict verification, and recheck protected-source identity afterward."
+    },
+    {
+      "id": "documentation_refresh",
+      "priority": "required_before_final",
+      "status": "open_at_review_time",
+      "finding": "README.md and REPORT.md still state that full certification is incomplete.",
+      "action": "Update both with final universal theorem names, exact certified artifact/source identities, extraction trust boundary, exclusions, reproduction commands, and final clean-build resource measurements."
+    },
+    {
+      "id": "source_fingerprint_scope",
+      "priority": "evidence_limitation",
+      "status": "document",
+      "finding": "Pinned manifest coverage is 106 files in poseidon_97 and nova60/Nova, not every protected sibling project.",
+      "action": "Preserve the existing manifest and report its exact scope; do not regenerate a baseline retrospectively to claim broader preservation evidence."
+    },
+    {
+      "id": "lexical_scan_automation",
+      "priority": "optional_hardening",
+      "status": "scan_passed",
+      "finding": "No forbidden source constructs were found in this review, but lexical scanning is not itself a verify.py step.",
+      "action": "The transitive standard-axiom whitelist already gates principal certification. Optionally make this defense-in-depth scan reproducible in audit.py without treating text scanning as a substitute for kernel/axiom checking."
+    }
+  ],
+  "evidence_sha256": {
+    "results/verification.json": "4fec038b08a1508b13077923c53f6c4ec8c7cfbd7de30728d71832d7b6f59ac6",
+    "results/full_axiom_audit.json": "9f7b1f8a3d9925ee5b77f7d2fc1b4d64a0e16ed6ef299e3563739befb1c18061",
+    "results/axiom_audit.json": "4663339746a15eb96d8a42deaffa70a64f234bef41c0b44e2ce1932f223f19fa",
+    "results/rust_validation.json": "2541fd473a9926426e1e4e9357620f4eba118289636521004d6aea9db987dfd0",
+    "results/artifact_validation.json": "2be9aecd2be206ee0c3e094d3ed9b4afce69a08ab7632771affc552da3dd795d",
+    "results/reference_validation.json": "021279a636dca26c8097561e525cb0cf304abbb3df6f3db11f953839d8d2130b",
+    "results/lean_differential.log": "bd6035e5510a96f3e93381bc6ee21131003ef614efd85d6d9ca6c80e925e574c",
+    "results/lean_certificate_rejection.log": "7bfedd522601aee34464ce5c8f0c420d3df79d2efa851b300bfe4525009d1a49",
+    "artifacts/source_manifest.json": "bf357f11e8b1e8879e87218f232f0da4eb77990b4b53771d9efcca6ee9df051b",
+    "lean/Certification.lean": "d6c7aecc05113734b6a29110b5c22c5495a362877c7db35bf7c40590b077f134",
+    "lean/CircuitCorrectness/Target.lean": "fa20714f66bc535a451d12ab7523efdc3dec84d464e00f720b7f879874ffab99",
+    "lean/CircuitCorrectness/Complete.lean": "e76b1031c166d4001d7ed25a47f1b5cf491e1af7693762715a92c0f8dc58e092",
+    "scripts/verify.py": "bd39d56090eae70ac6e02fdb7af264dfce56a63fe3a8b63de2d11b09695e1246",
+    "scripts/audit.py": "f61c0075a899e8589ffafd1b2537cd380bfc63f394ad6ae490dadc2a4ef2cade",
+    "scripts/validate_artifacts.py": "a1e687a5c9fcf1d48196af6e3315718c18753d211931319c883ee1eafd482361",
+    "scripts/sources.py": "1951c6cab970f74e25cd079b168c3740bac3bbdec3cd9af90e88e885d184f79f",
+    "exporter/src/main.rs": "1e5403599812288dbfd31da4f42e9d34b8446bc3950139d1da19f8bfb30530ba"
+  }
+}

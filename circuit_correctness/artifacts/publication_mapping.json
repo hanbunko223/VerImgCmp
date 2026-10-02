@@ -1,0 +1,8 @@
+{
+  "format": "poseidon97-publication-mapping-v1",
+  "source_prefix": "poseidon_97/",
+  "published_prefix": "SNARKPEG_Poseidon/",
+  "files_checked": 106,
+  "all_certified_source_bytes_unchanged": true,
+  "manifest_sha256": "bf357f11e8b1e8879e87218f232f0da4eb77990b4b53771d9efcca6ee9df051b"
+}

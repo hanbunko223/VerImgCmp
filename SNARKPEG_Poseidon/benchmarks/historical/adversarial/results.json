@@ -1,0 +1,52 @@
+[
+  {
+    "name": "legacy coefficient format",
+    "rejected": true,
+    "stderr": "unsupported public coefficient format snarkpeg-approx-dctq-coefficients-v1; expected poseidon-97-centered-dct128-recip1024-coefficients-v1"
+  },
+  {
+    "name": "omitted coefficient nonzero",
+    "rejected": true,
+    "stderr": "public coefficient at fixed zero-Q position row 7, col 7, channel 1 must be zero, got 1"
+  },
+  {
+    "name": "out of bounds coefficient",
+    "rejected": true,
+    "stderr": "public coefficient at row 0, col 0, channel 0 is out of range: 549755813888"
+  },
+  {
+    "name": "changed retained coefficient",
+    "rejected": true,
+    "stderr": "artifact statement or version mismatch"
+  },
+  {
+    "name": "different authorized digest",
+    "rejected": true,
+    "stderr": "artifact statement or version mismatch"
+  },
+  {
+    "name": "artifact challenge altered",
+    "rejected": true,
+    "stderr": "artifact statement or version mismatch"
+  },
+  {
+    "name": "legacy artifact version",
+    "rejected": true,
+    "stderr": "artifact statement or version mismatch"
+  },
+  {
+    "name": "wrong step count",
+    "rejected": true,
+    "stderr": "artifact statement or version mismatch"
+  },
+  {
+    "name": "invalid cryptographic proof",
+    "rejected": true,
+    "stderr": "missing field `r_U`"
+  },
+  {
+    "name": "cryptographic proof bytes altered",
+    "rejected": true,
+    "stderr": "InvalidSumcheckProof"
+  }
+]

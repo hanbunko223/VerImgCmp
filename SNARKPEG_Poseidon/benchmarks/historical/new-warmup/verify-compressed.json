@@ -1,0 +1,13 @@
+{
+  "application_s": 3.272529917,
+  "command": "verify",
+  "compression_setup_s": 0.290526166,
+  "peak_rss_bytes": 320716800,
+  "proof_count": 1,
+  "resolution": "HD",
+  "setup_s": 2.454359667,
+  "statement_s": 0.255593917,
+  "steps": 360,
+  "threads": 8,
+  "verify_s": 0.266234583
+}

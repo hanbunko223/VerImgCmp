@@ -1,0 +1,11 @@
+import CircuitCorrectness.Arithmetic
+#check List.sum_ofFn
+#check Fin.sum_univ_eq_sum_range
+#check Nat.cast_sum
+#check ZMod.natCast_self
+#check Finset.sum_lt_sum
+#check Nat.testBit
+#check Bool.toNat
+#check Bool.toNat_le
+#check Finset.sum_le_sum
+#check List.ofFn

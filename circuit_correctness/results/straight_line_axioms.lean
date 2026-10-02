@@ -1,0 +1,7 @@
+import CircuitCorrectness.StraightLine
+#print axioms CircuitCorrectness.StraightLine.run_satisfies
+#print axioms CircuitCorrectness.StraightLine.satisfying_agrees_run
+#print axioms CircuitCorrectness.StraightLine.satisfying_determinism
+#print axioms CircuitCorrectness.StraightLine.exists_satisfying_extension
+#print axioms CircuitCorrectness.StraightLine.checked_wellFormed
+#print axioms CircuitCorrectness.StraightLine.ordered_knownAfter

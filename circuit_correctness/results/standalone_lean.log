@@ -1,0 +1,12 @@
+'CircuitCorrectness.Target.step_soundness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CircuitCorrectness.Target.step_completeness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CircuitCorrectness.Target.step_determinism' depends on axioms: [propext, Classical.choice, Quot.sound]
+CircuitCorrectness.Target.connected_steps (images : ℕ → CircuitCorrectness.Spec.Image)
+  (states : ℕ → CircuitCorrectness.Spec.State) (witnesses : ℕ → CircuitCorrectness.Assignment) (count : ℕ)
+  (hc : CircuitCorrectness.Target.ConnectedSteps images states witnesses count) :
+  states count = CircuitCorrectness.Target.execute images count (states 0)
+CircuitCorrectness.Target.connected360 (images : ℕ → CircuitCorrectness.Spec.Image)
+  (states : ℕ → CircuitCorrectness.Spec.State) (witnesses : ℕ → CircuitCorrectness.Assignment)
+  (hc : CircuitCorrectness.Target.ConnectedSteps images states witnesses 360) :
+  states 360 = CircuitCorrectness.Target.execute images 360 (states 0)
+'CircuitCorrectness.Target.connected360' depends on axioms: [propext, Classical.choice, Quot.sound]

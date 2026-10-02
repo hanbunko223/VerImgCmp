@@ -1,0 +1,16 @@
+import CircuitCorrectness.ConcreteProgram
+import CircuitCorrectness.PoseidonProgram
+set_option maxRecDepth 20000
+set_option maxHeartbeats 10000000
+namespace CircuitCorrectness.HashCertificates
+open PoseidonProgram
+
+def firstHashRows : List Row :=
+  ((ExportedData.chunks.extract 605 609).toList.flatMap fun c => Exported.decodeRows c.1 c.2).drop 56 |>.take 388
+
+def firstHash : CompiledHash := compileHash Spec.params8 97634 77500 0x48415348
+  ((List.range 8).toArray.map fun i => Affine.wire (77484+i))
+
+theorem firstHash_exact : ConcreteProgram.extractRows 97634 77500 firstHashRows =
+    some firstHash.program := by decide +kernel
+end CircuitCorrectness.HashCertificates

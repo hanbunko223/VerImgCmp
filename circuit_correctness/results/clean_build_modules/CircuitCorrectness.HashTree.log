@@ -1,0 +1,30 @@
+⚠ [1590/1603] Replayed CircuitCorrectness.Affine
+warning: CircuitCorrectness/Affine.lean:52:33: This simp argument is unused:
+  add_assoc
+
+Hint: Omit it from the simp argument list.
+  simp [ih, add_left_comm,̵ ̵a̵d̵d̵_̵a̵s̵s̵o̵c̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [1598/1603] Replayed CircuitCorrectness.PoseidonProgram
+warning: CircuitCorrectness/PoseidonProgram.lean:38:15: unused variable `one`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: CircuitCorrectness/PoseidonProgram.lean:137:14: This simp argument is unused:
+  Function.comp_def
+
+Hint: Omit it from the simp argument list.
+  simp [hc,̵ ̵F̵u̵n̵c̵t̵i̵o̵n̵.̵c̵o̵m̵p̵_̵d̵e̵f̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: CircuitCorrectness/PoseidonProgram.lean:194:68: This simp argument is unused:
+  one_mul
+
+Hint: Omit it from the simp argument list.
+  simp only [Instruction.value, Affine.eval_constant, Nat.cast_one, o̵n̵e̵_̵m̵u̵l̵,̵
+  ̵ ̵ ̵ ̵ ̵h1, mul_one, Affine.eval_nil,
+  ̲  ̲ ̲ ̲add_zero] at ho
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+✔ [1603/1603] Built CircuitCorrectness.HashTree (2.2s)
+Build completed successfully (1603 jobs).

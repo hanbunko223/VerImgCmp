@@ -1,0 +1,603 @@
+{
+  "status": "pass",
+  "scope": "concrete core proofs",
+  "allowed_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "theorems": [
+    {
+      "theorem": "CircuitCorrectness.modulus_prime",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.chunk_fits",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ParameterChecks.first_row",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ParameterChecks.retained_count",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Example.soundness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Example.completeness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Example.determinism",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Example.missing_output_constraint_counterexample",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Gadgets.boolean_soundness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Gadgets.boolean_completeness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Gadgets.linear_output",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Gadgets.quintic_soundness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Gadgets.quintic_completeness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Gadgets.fused_horner",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Gadgets.horner_append",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Arithmetic.two_stages_eq_direct",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Arithmetic.cast_firstStage",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Arithmetic.cast_secondStage",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Arithmetic.radix_packing_bound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Arithmetic.pixel_packing_bound",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Arithmetic.chunk_packing_bound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Exported.row_count",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Exported.counter_row_present",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Exported.counter_transition",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Target.determinism_of_soundness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Byte.soundness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Byte.complete_of_values",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ConcreteBytes.actual_prefix",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ConcreteBytes.soundness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ConcreteBytes.complete_of_values",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ConcreteBytes.pixel_wire",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Seed.matches_iff",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Seed.preserved",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ProgramCertificates.correct",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ProgramCertificates.wellFormed",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ProgramCertificates.execution_satisfies",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.ProgramCertificates.execution_preserves",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctProgramCertificates.firstProgram_satisfied",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctProgramCertificates.hornerProgram_satisfied",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctProgramCertificates.exported_dct_sound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.PackingCertificates.satisfied",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.PoseidonProgram.hash_sound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashTrace.checkpoints_sound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashTrace2.template_sound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashTrace8.template_sound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.left_sat",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.right_sat",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.combine_sat",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.sat48",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.sat49",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.sat50",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.sat51",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.left",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.right",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.combine",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.digest_left",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.digest_right",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.digest_combine_value",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashWiring.chain_value",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.HashTree.chain_sound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.exists_satisfying_step",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.Target.connected_steps_of_soundness",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.coefficient_bounds",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.coefficient_global_bounds",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.bounded_cast_injective",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.coefficient_cast_injective",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.packedPixel_bound",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.packedChunk_bound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.packedChunk_field_bound",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.packedChunk_cast_value",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.first_row_pruning",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.DctSpec.omitted_zero",
+      "axioms": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "theorem": "CircuitCorrectness.signed_coefficients_fit",
+      "axioms": []
+    },
+    {
+      "theorem": "CircuitCorrectness.ParameterChecks.reciprocal_construction",
+      "axioms": []
+    },
+    {
+      "theorem": "CircuitCorrectness.ParameterChecks.red_count",
+      "axioms": []
+    },
+    {
+      "theorem": "CircuitCorrectness.ParameterChecks.green_count",
+      "axioms": []
+    },
+    {
+      "theorem": "CircuitCorrectness.ParameterChecks.blue_count",
+      "axioms": []
+    },
+    {
+      "theorem": "CircuitCorrectness.Exported.challenge_alias",
+      "axioms": []
+    },
+    {
+      "theorem": "CircuitCorrectness.Target.actual_challenge_preserved",
+      "axioms": []
+    }
+  ]
+}

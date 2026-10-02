@@ -3,23 +3,37 @@ pub mod frontend {
 }
 
 mod artifact;
+mod bundle;
 mod circuit;
+mod coefficient;
 mod dctq;
 mod hash;
 mod input;
 mod poseidon;
 mod prover;
+mod statement;
 
 use crate::{
     artifact::RecursiveProofArtifact,
-    hash::scalar_to_decimal_string,
+    coefficient::{digest_hex, PublicCoefficients, COEFFICIENT_FORMAT},
+    hash::{scalar_to_decimal_string, Scalar},
     input::{resolution_spec, PIXELS_PER_STEP},
-    prover::{prove, prove_spartan_compressed, NativeRecursiveSNARK, ProverError},
+    prover::{
+        prove, prove_spartan_compressed, NativePublicParams, NativeRecursiveSNARK, ProverError,
+        SpartanCompressedSNARK,
+    },
+    statement::{
+        derive_coefficient_challenge, PublicInputDigest, CHALLENGE_SCHEME, INPUT_DIGEST_FORMAT,
+    },
 };
 use clap::{App, Arg};
+use ff::Field;
+use nova_snark::frontend::ConstraintSystem;
 use nova_snark::timing::snapshot_recursive_timing;
+use nova_snark::traits::snark::default_ck_hint;
 use rayon::ThreadPoolBuilder;
-use serde_json::to_string_pretty;
+use serde_json::{json, Value};
+use std::time::Instant;
 use std::{
     env,
     fs::File,
@@ -28,118 +42,38 @@ use std::{
     path::PathBuf,
 };
 
-fn print_neutron_timing_summary(
-    recursive_creation_s: f64,
-    frontend_prepare_s: f64,
-    verify_s: f64,
-) {
-    let timing = snapshot_recursive_timing();
-    let prove_step_s = timing.neutron_prove_step_total;
-    let extract_other_s = (timing.neutron_extract_instance_witness - timing.commit_w).max(0.0);
-
-    println!();
-    println!("NeutronNova recursive proving summary:");
-    println!("+-------------------------------+-------------+");
-    println!("| metric                        | time (s)    |");
-    println!("+-------------------------------+-------------+");
-    println!(
-        "| total recursive creation      | {:>11.6} |",
-        recursive_creation_s
-    );
-    println!(
-        "| frontend_prepare              | {:>11.6} |",
-        frontend_prepare_s
-    );
-    println!("| prove_step                    | {:>11.6} |", prove_step_s);
-    println!("+-------------------------------+-------------+");
-    println!();
-    println!("prove_step breakdown (sum over all folded steps):");
-    println!("+-------------------------------+-------------+");
-    println!("| metric                        | time (s)    |");
-    println!("+-------------------------------+-------------+");
-    println!(
-        "| commit_E                      | {:>11.6} |",
-        timing.neutron_commit_e
-    );
-    println!(
-        "| multiply_vec_z1               | {:>11.6} |",
-        timing.neutron_multiply_vec_z1
-    );
-    println!(
-        "| multiply_vec_z2               | {:>11.6} |",
-        timing.neutron_multiply_vec_z2
-    );
-    println!(
-        "| prove_helper                  | {:>11.6} |",
-        timing.neutron_prove_helper
-    );
-    println!(
-        "| poly_finalize                 | {:>11.6} |",
-        timing.neutron_poly_finalize
-    );
-    println!(
-        "| fold_instance                 | {:>11.6} |",
-        timing.neutron_fold_instance
-    );
-    println!(
-        "| fold_witness                  | {:>11.6} |",
-        timing.neutron_fold_witness
-    );
-    println!(
-        "| augmented_synthesize          | {:>11.6} |",
-        timing.neutron_augmented_synthesize
-    );
-    println!(
-        "| commit_W                      | {:>11.6} |",
-        timing.commit_w
-    );
-    println!(
-        "| extract_other                 | {:>11.6} |",
-        extract_other_s
-    );
-    println!("+-------------------------------+-------------+");
-    println!("recursive verify: {:.6}s", verify_s);
+struct VerifierStatement {
+    input_digest: Scalar,
+    coefficient_sha256: [u8; 32],
+    challenge: Scalar,
+    coefficient_evaluation: Scalar,
+    start_public_input: Vec<Scalar>,
+    expected_final_outputs: Vec<Scalar>,
 }
 
-fn main() {
-    if let Err(error) = run() {
-        eprintln!("{error}");
-        std::process::exit(1);
-    }
-}
-
-fn resolve_rayon_thread_count(matches: &clap::ArgMatches) -> Result<usize, ProverError> {
-    let cli_value = matches.value_of("rayon_threads");
-    let env_value = env::var("RAYON_NUM_THREADS").ok();
-    let raw_value = cli_value.or(env_value.as_deref());
-    let default_threads = std::thread::available_parallelism()
-        .map(|parallelism| parallelism.get())
-        .unwrap_or(1);
-
-    match raw_value {
-        Some(value) => {
-            let parsed = value.parse::<usize>().map_err(|_| {
-                ProverError::Configuration(format!("invalid Rayon thread count: {value}"))
-            })?;
-            if parsed == 0 {
-                return Err(ProverError::Configuration(
-                    "Rayon thread count must be greater than 0".to_string(),
-                ));
-            }
-            Ok(parsed)
-        }
-        None => Ok(default_threads),
-    }
-}
-
-fn initialize_rayon(thread_count: usize) -> Result<usize, ProverError> {
-    ThreadPoolBuilder::new()
-        .num_threads(thread_count)
-        .build_global()
-        .map_err(|error| {
-            ProverError::Configuration(format!("failed to initialize Rayon thread pool: {error}"))
-        })?;
-    Ok(rayon::current_num_threads())
+fn load_verifier_statement(
+    input_digest_path: &std::path::Path,
+    coefficient_path: &std::path::Path,
+    spec: &input::ResolutionSpec,
+) -> Result<VerifierStatement, ProverError> {
+    let input_digest = PublicInputDigest::load(input_digest_path, spec)?.value;
+    let coefficients = PublicCoefficients::load(coefficient_path, spec)?;
+    let coefficient_sha256 = coefficients.canonical_digest(spec);
+    let challenge = derive_coefficient_challenge(input_digest, &coefficient_sha256, spec)?;
+    let coefficient_evaluation = coefficients.active_evaluation(challenge);
+    Ok(VerifierStatement {
+        input_digest,
+        coefficient_sha256,
+        challenge,
+        coefficient_evaluation,
+        start_public_input: vec![Scalar::ZERO, Scalar::ZERO, challenge, Scalar::ZERO],
+        expected_final_outputs: vec![
+            input_digest,
+            coefficient_evaluation,
+            challenge,
+            Scalar::from(spec.step_count as u64),
+        ],
+    })
 }
 
 #[cfg(unix)]
@@ -169,193 +103,217 @@ fn peak_rss_bytes() -> Option<u64> {
     None
 }
 
-fn run() -> Result<(), ProverError> {
-    let matches = App::new("SNARKPEG_Poseidon")
-        .version("v1.3.0")
-        .author("Zero-Savvy")
-        .about("Verifiable Image Manipulation from Folded zkSNARKs")
-        .arg(
-            Arg::with_name("input")
-                .required(true)
-                .short("i")
-                .long("input")
-                .value_name("FILE")
-                .help("The JSON file containing the original image rows to verify.")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("output")
-                .required(true)
-                .short("o")
-                .long("output")
-                .value_name("FILE")
-                .help("This file will contain the final proof artifact.")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("function")
-                .required(true)
-                .short("f")
-                .long("function")
-                .value_name("FUNCTION")
-                .help("The transformation function.")
-                .takes_value(true)
-                .possible_values(&["dctq"]),
-        )
-        .arg(
-            Arg::with_name("resolution")
-                .required(true)
-                .short("r")
-                .long("resolution")
-                .value_name("RESOLUTION")
-                .help("The resolution of the image.")
-                .takes_value(true)
-                .possible_values(&["SD", "HD", "FHD", "QHD", "4K"]),
-        )
-        .arg(
-            Arg::with_name("rayon_threads")
-                .long("rayon-threads")
-                .value_name("N")
-                .help("Override the Rayon thread count. Falls back to RAYON_NUM_THREADS, then the system CPU count.")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("spartan_compress")
-                .long("spartan-compress")
-                .help("Also run the Neutron-native Spartan decider and print compressed proof size plus verifier time."),
-        )
-        .get_matches();
-    let spartan_mode = matches.is_present("spartan_compress");
-
-    let requested_rayon_threads = resolve_rayon_thread_count(&matches)?;
-    let active_rayon_threads = initialize_rayon(requested_rayon_threads)?;
-
-    let input_path = PathBuf::from(matches.value_of("input").unwrap());
-    let output_path = PathBuf::from(matches.value_of("output").unwrap());
-    let selected_function = matches.value_of("function").unwrap();
-    let resolution = matches.value_of("resolution").unwrap();
-    let spec = resolution_spec(resolution).expect("clap validated the resolution");
-
-    println!("| Image resolution: {}", resolution);
-    println!("| Rayon threads: {}", active_rayon_threads);
-    println!("| Expected steps: {}", spec.step_count);
-    println!("| Pixels per step: {}", PIXELS_PER_STEP);
-
-    let proving = prove(&input_path, selected_function, resolution)?;
-    if !spartan_mode {
-        println!("RecursiveSNARK::verify: true, took {:.3}s", proving.verify_s);
+const ARTIFACT: &str = "poseidon-97-centered-dct128-recip1024-proof-v1";
+fn main() {
+    if let Err(e) = run() {
+        eprintln!("{e}");
+        std::process::exit(1)
     }
-    let final_output_strings = proving
-        .final_outputs
-        .iter()
-        .map(scalar_to_decimal_string)
-        .collect::<Vec<_>>();
-    let start_public_input_strings = proving
-        .start_public_input
-        .iter()
-        .map(scalar_to_decimal_string)
-        .collect::<Vec<_>>();
-
-    let artifact = RecursiveProofArtifact::<NativeRecursiveSNARK> {
-        backend: "snarkpeg-poseidon".to_string(),
-        proof_kind: "recursive".to_string(),
-        function: selected_function.to_string(),
-        resolution: resolution.to_string(),
-        num_steps: proving.num_steps,
-        start_public_input: start_public_input_strings,
-        final_outputs: final_output_strings.clone(),
-        proof: proving.proof,
-    };
-
-    let json_string = to_string_pretty(&artifact).expect("failed to serialize recursive proof");
-    let mut output_file =
-        File::create(&output_path).expect("unable to create the proof output file");
-    output_file
-        .write_all(json_string.as_bytes())
-        .expect("unable to write proof output");
-    if !spartan_mode {
-        println!(
-            "Recursive proof artifact written to {}",
-            output_path.display()
-        );
-    }
-
-    let mut file = File::open(&output_path).expect("unable to open the proof output");
-    let mut json_string = String::new();
-    file.read_to_string(&mut json_string)
-        .expect("unable to read the proof output");
-
-    let artifact_roundtrip: RecursiveProofArtifact<NativeRecursiveSNARK> =
-        serde_json::from_str(&json_string).expect("failed to deserialize recursive proof output");
-    let roundtrip_outputs = artifact_roundtrip
-        .proof
-        .verify(&proving.pp, proving.num_steps, &proving.start_public_input)
-        .expect("round-trip RecursiveSNARK verification failed");
-    let roundtrip_output_strings = roundtrip_outputs
-        .iter()
-        .map(scalar_to_decimal_string)
-        .collect::<Vec<_>>();
-    assert_eq!(
-        roundtrip_output_strings, artifact_roundtrip.final_outputs,
-        "round-trip proof outputs do not match serialized final outputs"
+}
+fn run() -> Result<(), Box<dyn std::error::Error>> {
+    let begin = Instant::now();
+    let mut app = App::new("poseidon_97").arg(
+        Arg::with_name("command")
+            .index(1)
+            .required(true)
+            .possible_values(&[
+                "digest",
+                "coefficients",
+                "inspect",
+                "prove",
+                "verify",
+                "bench",
+            ]),
     );
-
-    if spartan_mode {
-        println!("Generating a CompressedSNARK using Spartan with IPA-PC...");
-        let spartan = prove_spartan_compressed(
-            &proving.pp,
-            &artifact_roundtrip.proof,
-            proving.num_steps,
-            &proving.start_public_input,
-        )?;
-        let spartan_output_strings = spartan
-            .final_outputs
-            .iter()
-            .map(scalar_to_decimal_string)
+    for name in [
+        "input",
+        "output",
+        "coefficients",
+        "input-digest",
+        "proof",
+        "metrics",
+        "resolution",
+        "threads",
+        "segment-steps",
+    ] {
+        app = app.arg(Arg::with_name(name).long(name).takes_value(true));
+    }
+    app = app.arg(Arg::with_name("spartan-compress").long("spartan-compress"));
+    let m = app.get_matches();
+    let command = m.value_of("command").unwrap();
+    let threads = m.value_of("threads").unwrap_or("8").parse::<usize>()?;
+    if threads == 0 {
+        return Err("threads must be positive".into());
+    }
+    ThreadPoolBuilder::new()
+        .num_threads(threads)
+        .build_global()?;
+    let path = |name: &str| -> Result<PathBuf, Box<dyn std::error::Error>> {
+        Ok(PathBuf::from(
+            m.value_of(name)
+                .ok_or_else(|| format!("--{name} required"))?,
+        ))
+    };
+    let spec = resolution_spec(m.value_of("resolution").unwrap_or("HD"))
+        .ok_or("unsupported resolution")?;
+    if command == "inspect" {
+        use nova_snark::frontend::{r1cs::NovaShape, shape_cs::ShapeCS};
+        use nova_snark::traits::circuit::StepCircuit;
+        let mut cs: ShapeCS<prover::PrimaryEngine> = ShapeCS::new();
+        let z = (0..4)
+            .map(|i| {
+                nova_snark::frontend::num::AllocatedNum::alloc_infallible(
+                    &mut cs.namespace(|| format!("z{i}")),
+                    || Scalar::ZERO,
+                )
+            })
             .collect::<Vec<_>>();
-        assert_eq!(
-            spartan_output_strings, final_output_strings,
-            "Spartan decider final outputs do not match recursive outputs"
-        );
-        println!("TOTAL_PROVER_TIME: {:.6} sec", proving.recursive_creation_s);
-        println!("Verifying a CompressedSNARK...");
+        circuit::DctqStepCircuit::new(circuit::PreparedStep::zero()).synthesize(&mut cs, &z)?;
+        let shape = cs.r1cs_shape()?;
         println!(
-            "CompressedSNARK::verify: true, took {:.3} sec",
-            spartan.verify_s
+            "{}",
+            json!({"constraints":shape.num_cons(),"variables":shape.num_vars(),"padded_dimension":shape.num_cons().max(shape.num_vars()).next_power_of_two(),"active_per_step":coefficient::ACTIVE_COEFFICIENTS_PER_STEP})
         );
-        println!("Proof size: {} bytes", spartan.proof_json_bytes);
-        match peak_rss_bytes() {
-            Some(bytes) => {
-                println!(
-                    "PEAK_RSS_GIB: {:.6} GiB.",
-                    bytes as f64 / (1024.0 * 1024.0 * 1024.0)
-                );
+        return Ok(());
+    }
+    if command == "digest" || command == "coefficients" {
+        use rayon::prelude::*;
+        let steps = input::DctqInput::load(&path("input")?, spec)?.into_steps();
+        let v = if command == "digest" {
+            let ds = steps.par_iter().map(hash::step_digest).collect::<Vec<_>>();
+            json!({"format":INPUT_DIGEST_FORMAT,"resolution":spec.name,"digest":scalar_to_decimal_string(&hash::chain_hash(&ds))})
+        } else {
+            let values = steps
+                .par_iter()
+                .map(|step| {
+                    dctq::compute_dctq_flattened(step)
+                        .unwrap()
+                        .iter()
+                        .map(|v| dctq::scalar_to_i128(*v) as i64)
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>();
+            let rows = values
+                .iter()
+                .flat_map(|v| {
+                    v.chunks(480)
+                        .map(|row| row.chunks(3).map(|x| x.to_vec()).collect::<Vec<_>>())
+                })
+                .collect::<Vec<_>>();
+            json!({"format":COEFFICIENT_FORMAT,"resolution":spec.name,"coefficients":rows})
+        };
+        std::fs::write(path("output")?, serde_json::to_vec(&v)?)?;
+        return Ok(());
+    }
+    let digest = path("input-digest")?;
+    let coefficients = path("coefficients")?;
+    let st_start = Instant::now();
+    let st = load_verifier_statement(&digest, &coefficients, spec)?;
+    let statement_s = st_start.elapsed().as_secs_f64();
+    let metadata = json!({"artifact_version":ARTIFACT,"resolution":spec.name,"steps":spec.step_count,"coefficient_format":COEFFICIENT_FORMAT,"challenge_scheme":CHALLENGE_SCHEME,
+ "input_digest":scalar_to_decimal_string(&st.input_digest),"coefficient_sha256":digest_hex(&st.coefficient_sha256),"challenge":scalar_to_decimal_string(&st.challenge)});
+    let mut metrics = json!({"proof_count":1,"command":command,"threads":threads,"resolution":spec.name,"steps":spec.step_count,"statement_s":statement_s});
+    let segment_steps = m
+        .value_of("segment-steps")
+        .unwrap_or("360")
+        .parse::<usize>()?;
+    if segment_steps == 0 || segment_steps > 360 {
+        return Err("invalid segment size".into());
+    }
+    if segment_steps < spec.step_count {
+        bundle::execute(&m, &st, metadata, &mut metrics, spec, segment_steps)?;
+        metrics["application_s"] = json!(begin.elapsed().as_secs_f64());
+        metrics["peak_rss_bytes"] = json!(peak_rss_bytes());
+        if m.is_present("metrics") {
+            std::fs::write(path("metrics")?, serde_json::to_vec_pretty(&metrics)?)?;
+        }
+        println!("{}", serde_json::to_string_pretty(&metrics)?);
+        return Ok(());
+    }
+    if command == "verify" {
+        let artifact: Value = serde_json::from_slice(&std::fs::read(path("proof")?)?)?;
+        if artifact["metadata"] != metadata {
+            return Err("artifact statement or version mismatch".into());
+        }
+        let start = Instant::now();
+        let template = circuit::DctqStepCircuit::new(circuit::PreparedStep::zero());
+        let pp = NativePublicParams::setup(&template, &*default_ck_hint(), &*default_ck_hint())?;
+        metrics["setup_s"] = json!(start.elapsed().as_secs_f64());
+        let output = match artifact["kind"].as_str() {
+            Some("recursive") => {
+                let proof: NativeRecursiveSNARK =
+                    serde_json::from_value(artifact["proof"].clone())?;
+                let now = Instant::now();
+                let v = proof.verify(&pp, spec.step_count, &st.start_public_input)?;
+                metrics["verify_s"] = json!(now.elapsed().as_secs_f64());
+                v
             }
-            None => {
-                println!("PEAK_RSS_GIB: unavailable");
+            Some("spartan") => {
+                let proof: SpartanCompressedSNARK =
+                    serde_json::from_value(artifact["proof"].clone())?;
+                let now = Instant::now();
+                let (_, vk) = SpartanCompressedSNARK::setup(&pp)?;
+                metrics["compression_setup_s"] = json!(now.elapsed().as_secs_f64());
+                let now = Instant::now();
+                let v = proof.verify(&vk, spec.step_count, &st.start_public_input)?;
+                metrics["verify_s"] = json!(now.elapsed().as_secs_f64());
+                v
             }
+            _ => return Err("unsupported proof kind".into()),
+        };
+        if output != st.expected_final_outputs {
+            return Err("proof output differs from public statement".into());
         }
     } else {
-        print_neutron_timing_summary(
-            proving.recursive_creation_s,
-            proving.frontend_prepare_s,
-            proving.verify_s,
-        );
-        println!("TOTAL_PROVER_TIME: {:.6}", proving.recursive_creation_s);
-        match peak_rss_bytes() {
-            Some(bytes) => {
-                println!("PEAK_RSS_BYTES: {}", bytes);
-                println!(
-                    "PEAK_RSS_GIB: {:.6}",
-                    bytes as f64 / (1024.0 * 1024.0 * 1024.0)
-                );
+        let proving = prove(&path("input")?, &coefficients, &digest, "dctq", spec.name)?;
+        let output = path("output")?;
+        let start = Instant::now();
+        let raw = serde_json::to_vec(&proving.proof)?;
+        metrics["recursive_proof_bytes"] = json!(raw.len());
+        let bytes = serde_json::to_vec(
+            &json!({"metadata":metadata,"kind":"recursive","proof":serde_json::from_slice::<Value>(&raw)?}),
+        )?;
+        std::fs::write(&output, &bytes)?;
+        metrics["recursive_artifact_bytes"] = json!(bytes.len());
+        metrics["serialization_s"] = json!(start.elapsed().as_secs_f64());
+        metrics["setup_s"] = json!(proving.setup_s);
+        metrics["preparation_s"] = json!(proving.frontend_prepare_s);
+        metrics["recursive_prover_s"] = json!(proving.recursive_creation_s);
+        metrics["backend_s"] = json!(proving.recursive_creation_s - proving.frontend_prepare_s);
+        metrics["recursive_verify_s"] = json!(proving.verify_s);
+        let timing = snapshot_recursive_timing();
+        metrics["prove_step_s"] = json!(timing.neutron_prove_step_total);
+        metrics["internal"] = json!({"augmented_synthesize_s":timing.neutron_augmented_synthesize,"commit_w_s":timing.commit_w,"commit_e_s":timing.neutron_commit_e,"multiply_vec_z1_s":timing.neutron_multiply_vec_z1,"multiply_vec_z2_s":timing.neutron_multiply_vec_z2,"prove_helper_s":timing.neutron_prove_helper,"fold_witness_s":timing.neutron_fold_witness});
+        if m.is_present("spartan-compress") {
+            let compressed = prove_spartan_compressed(
+                &proving.pp,
+                &proving.proof,
+                spec.step_count,
+                &st.start_public_input,
+            )?;
+            if compressed.final_outputs != st.expected_final_outputs {
+                return Err("compressed output mismatch".into());
             }
-            None => {
-                println!("PEAK_RSS_BYTES: unavailable");
-                println!("PEAK_RSS_GIB: unavailable");
-            }
+            let start = Instant::now();
+            let bytes = serde_json::to_vec(
+                &json!({"metadata":metadata,"kind":"spartan","proof":serde_json::from_slice::<Value>(&compressed.proof_json)?}),
+            )?;
+            let dest = output.with_extension("spartan.json");
+            std::fs::write(dest, &bytes)?;
+            metrics["compressed_artifact_bytes"] = json!(bytes.len());
+            metrics["compressed_proof_bytes"] = json!(compressed.proof_json_bytes);
+            metrics["compressed_serialization_s"] =
+                json!(compressed.serialization_s + start.elapsed().as_secs_f64());
+            metrics["compression_setup_s"] = json!(compressed.setup_s);
+            metrics["compression_s"] = json!(compressed.compression_s);
+            metrics["compressed_verify_s"] = json!(compressed.verify_s);
         }
     }
-
+    metrics["application_s"] = json!(begin.elapsed().as_secs_f64());
+    metrics["peak_rss_bytes"] = json!(peak_rss_bytes());
+    if m.is_present("metrics") {
+        std::fs::write(path("metrics")?, serde_json::to_vec_pretty(&metrics)?)?;
+    }
+    println!("{}", serde_json::to_string_pretty(&metrics)?);
     Ok(())
 }

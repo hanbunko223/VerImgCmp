@@ -1,0 +1,12 @@
+import CircuitCorrectness.SatisfyingWitness
+import CircuitCorrectness.HashTree
+import CircuitCorrectness.HashTrace
+import CircuitCorrectness.InputBridge
+import CircuitCorrectness.Composition
+#print axioms CircuitCorrectness.exists_satisfying_step
+#print axioms CircuitCorrectness.PoseidonProgram.hash_sound
+#print axioms CircuitCorrectness.HashProgram.program_sound
+#print axioms CircuitCorrectness.HashTree.chain_sound
+#print axioms CircuitCorrectness.HashTrace.checkpoints_sound
+#print axioms CircuitCorrectness.Target.matches_hash
+#print axioms CircuitCorrectness.Target.connected_steps_of_soundness

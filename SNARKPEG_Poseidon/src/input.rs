@@ -88,6 +88,18 @@ pub fn resolution_spec(name: &str) -> Option<&'static ResolutionSpec> {
     }
 }
 
+pub fn resolution_tag(spec: &ResolutionSpec) -> u64 {
+    match spec.name {
+        "SD" => 1,
+        "HD" => 2,
+        "FHD" => 3,
+        "QHD" => 4,
+        "4K" => 5,
+        "TEST" => 255,
+        _ => panic!("unsupported resolution tag for {}", spec.name),
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum InputError {
     #[error("failed to open input file {path}: {source}")]
@@ -246,6 +258,9 @@ mod tests {
     fn four_k_uses_exact_fixed_pixel_schedule() {
         assert_eq!(K4_SPEC.step_count, 3240);
         assert_eq!(K4_SPEC.padded_pixels, 0);
-        assert_eq!(K4_SPEC.width * K4_SPEC.height, K4_SPEC.step_count * PIXELS_PER_STEP);
+        assert_eq!(
+            K4_SPEC.width * K4_SPEC.height,
+            K4_SPEC.step_count * PIXELS_PER_STEP
+        );
     }
 }

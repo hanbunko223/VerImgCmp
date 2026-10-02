@@ -1,0 +1,16 @@
+{
+  "platform": "macOS-15.6.1-arm64-arm-64bit",
+  "architecture": "arm64",
+  "rustc": "rustc 1.90.0 (1159e78c4 2025-09-14)\nbinary: rustc\ncommit-hash: 1159e78c4747b02ef996e55082b704c09b970588\ncommit-date: 2025-09-14\nhost: aarch64-apple-darwin\nrelease: 1.90.0\nLLVM version: 20.1.8\n",
+  "cargo": "cargo 1.90.0 (840b83a10 2025-07-30)\n",
+  "lean_version": "v4.28.0",
+  "lean_commit": "7e01a1bf5c70fc6167d49c345d3bf80596e9a79b",
+  "mathlib_revision": "8f9d9cff6bd728b17a24e163c9402775d9e6a365",
+  "source_files": 106,
+  "artifact_sha256": {
+    "artifacts/parameters.json": "4bd0b820ce5f9dfa38b42b2bb9ccf6a4587b458fb929e977afb3de45a5b11a51",
+    "artifacts/source_manifest.json": "bf357f11e8b1e8879e87218f232f0da4eb77990b4b53771d9efcca6ee9df051b",
+    "artifacts/step.json": "b224af7062f6d689449f1689bb91d8845de9fc77d3230919f99b6f22eda594d7",
+    "artifacts/trace.json": "56790c2dc34f128abae26e461ad1b671cc2d51b27ad1d9bcd1ef51715c34bd9c"
+  }
+}

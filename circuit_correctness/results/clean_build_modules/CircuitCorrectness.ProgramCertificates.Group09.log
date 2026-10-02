@@ -1,0 +1,19 @@
+⚠ [1601/1605] Replayed CircuitCorrectness.Affine
+warning: CircuitCorrectness/Affine.lean:52:33: This simp argument is unused:
+  add_assoc
+
+Hint: Omit it from the simp argument list.
+  simp [ih, add_left_comm,̵ ̵a̵d̵d̵_̵a̵s̵s̵o̵c̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [1602/1605] Replayed CircuitCorrectness.ConcreteProgram
+warning: CircuitCorrectness/ConcreteProgram.lean:257:61: This simp argument is unused:
+  one_mul
+
+Hint: Omit it from the simp argument list.
+  simp only [expandLC, ̲List.map_cons, ̲List.map_nil, ̲evalLC, ̲List.sum_cons, ̲List.sum_nil,
+        one_expand, ̲neg_one_expand, ̲cast_neg_one, ̲Nat.cast_one, ̲h1,o̵n̵e̵_̵m̵u̵l̵,̵ ̲add_zero, ̲mul_one]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+✔ [1605/1605] Built CircuitCorrectness.ProgramCertificates.Group09 (21s)
+Build completed successfully (1605 jobs).

@@ -1,0 +1,26 @@
+⚠ [1598/1602] Replayed CircuitCorrectness.Affine
+warning: CircuitCorrectness/Affine.lean:52:33: This simp argument is unused:
+  add_assoc
+
+Hint: Omit it from the simp argument list.
+  simp [ih, add_left_comm,̵ ̵a̵d̵d̵_̵a̵s̵s̵o̵c̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [1600/1602] Replayed CircuitCorrectness.DctProgram
+warning: CircuitCorrectness/DctProgram.lean:71:2: try 'simp' instead of 'simpa'
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+warning: CircuitCorrectness/DctProgram.lean:239:31: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
+
+Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`
+⚠ [1611/1613] Replayed CircuitCorrectness.ConcreteProgram
+warning: CircuitCorrectness/ConcreteProgram.lean:257:61: This simp argument is unused:
+  one_mul
+
+Hint: Omit it from the simp argument list.
+  simp only [expandLC, ̲List.map_cons, ̲List.map_nil, ̲evalLC, ̲List.sum_cons, ̲List.sum_nil,
+        one_expand, ̲neg_one_expand, ̲cast_neg_one, ̲Nat.cast_one, ̲h1,o̵n̵e̵_̵m̵u̵l̵,̵ ̲add_zero, ̲mul_one]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+✔ [1613/1613] Built CircuitCorrectness.DctProgramCertificates.Group00 (16s)
+Build completed successfully (1613 jobs).

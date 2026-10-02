@@ -1,0 +1,233 @@
+{
+  "format": "poseidon97-completion-audit-v1",
+  "status": "pass",
+  "certified": true,
+  "recorded_at_utc": "2026-09-28T14:11:02.803779+00:00",
+  "scope": "Pinned exported original poseidon_97 application-step R1CS; accepted extraction boundary; cryptographic protocol excluded",
+  "requirements": [
+    {
+      "id": "exact_target",
+      "status": "pass",
+      "claim": "Original poseidon_97 16x160 RGB application step, threshold97, unnormalized centered integer DCT-Q; no180-step or augmented substitution",
+      "evidence": [
+        "lean/CircuitCorrectness/Target.lean",
+        "lean/CircuitCorrectness/Spec.lean",
+        "results/final_semantic_review.json"
+      ]
+    },
+    {
+      "id": "actual_extraction",
+      "status": "pass",
+      "claim": "Actual synthesize, plain/traced ShapeCS equality, deterministic regenerated artifacts and exact interface maps",
+      "evidence": [
+        "exporter/src/main.rs",
+        "results/rust_validation.json",
+        "results/rust_export.log",
+        "results/artifact_validation.json"
+      ]
+    },
+    {
+      "id": "independent_specification",
+      "status": "pass",
+      "claim": "Functional hash, direct integer DCT sum, retained ordering, original-byte packing and state function independent of R1CS satisfaction",
+      "evidence": [
+        "lean/CircuitCorrectness/Spec.lean",
+        "results/final_semantic_review.json"
+      ]
+    },
+    {
+      "id": "concrete_row_soundness",
+      "status": "pass",
+      "claim": "Actual byte, packing, DCT/Horner, both hash templates,52nodes, state mappings and counter connected to specification",
+      "evidence": [
+        "lean/CircuitCorrectness/Complete.lean",
+        "lean/CircuitCorrectness/ActualHash.lean",
+        "lean/CircuitCorrectness/DctProgramCertificates/All.lean",
+        "results/final_semantic_review.json"
+      ]
+    },
+    {
+      "id": "all_row_completeness",
+      "status": "pass",
+      "claim": "Constructed seed and verified program cover take69120 plus drop69120, including all prepared hashes",
+      "evidence": [
+        "lean/CircuitCorrectness/SatisfyingWitness.lean",
+        "lean/CircuitCorrectness/ProgramCertificates/All.lean",
+        "lean/CircuitCorrectness/Seed.lean"
+      ]
+    },
+    {
+      "id": "principal_theorems",
+      "status": "pass",
+      "claim": "Exact soundness, completeness, determinism and connected-step/360 statements built and audited",
+      "evidence": [
+        "lean/Certification.lean",
+        "lean/CircuitCorrectness/Complete.lean",
+        "results/full_axiom_audit.json"
+      ]
+    },
+    {
+      "id": "integer_interpretation",
+      "status": "pass",
+      "claim": "Coefficient bounds/injectivity and24/240-bit packing bounds/casts/pruning explicitly audited",
+      "evidence": [
+        "lean/CircuitCorrectness/DctSpec.lean",
+        "results/axiom_audit.json"
+      ]
+    },
+    {
+      "id": "proof_integrity",
+      "status": "pass",
+      "claim": "Standard logical axiom whitelist; no placeholders or compiler-trust shortcuts found",
+      "evidence": [
+        "results/full_axiom_audit.json",
+        "results/axiom_audit.json",
+        "results/proof_source_scan.json"
+      ]
+    },
+    {
+      "id": "regression_and_mutation",
+      "status": "pass",
+      "claim": "Five complete fixtures, actual Rust witnesses,30witness mutations,10malformed artifacts, four kernel rejection modules, independent differential checks",
+      "evidence": [
+        "results/rust_validation.json",
+        "results/artifact_validation.json",
+        "results/reference_validation.json",
+        "results/lean_differential.log",
+        "results/lean_certificate_rejection.log"
+      ]
+    },
+    {
+      "id": "strict_gate",
+      "status": "pass",
+      "claim": "Default verification exits0, all19phases pass, certifiedtrue and source checked before/after",
+      "evidence": [
+        "scripts/verify.py",
+        "results/verification.json",
+        "results/acceptance_final.log"
+      ]
+    },
+    {
+      "id": "clean_build",
+      "status": "pass",
+      "claim": "280certification modules clean-built, bounded concurrency, cached external dependencies, wall/RSS recorded",
+      "evidence": [
+        "scripts/clean_build.py",
+        "results/clean_certification.resources.json",
+        "results/clean_build_modules/Certification.log"
+      ]
+    },
+    {
+      "id": "standalone",
+      "status": "pass",
+      "claim": "Fresh-process Certification elaboration using committed data/built imports, without private image/Rust/Nova",
+      "evidence": [
+        "results/standalone_lean.resources.json",
+        "results/standalone_lean.log"
+      ]
+    },
+    {
+      "id": "preservation",
+      "status": "pass",
+      "claim": "106pinned poseidon_97/Nova source/Cargo/build files match original manifest; artifact identities unchanged",
+      "evidence": [
+        "scripts/sources.py",
+        "artifacts/source_manifest.json",
+        "results/verification.json"
+      ]
+    },
+    {
+      "id": "delivery",
+      "status": "pass",
+      "claim": "Tutorial, exact claims, reproduction, trust boundary, exclusions, current status and measurements documented",
+      "evidence": [
+        "README.md",
+        "REPORT.md",
+        "PROOF_STATUS.md",
+        "results/README.md"
+      ]
+    }
+  ],
+  "source_preservation": {
+    "status": "pass",
+    "files_checked": 106
+  },
+  "source_manifest_scope": [
+    "poseidon_97",
+    "nova60/Nova"
+  ],
+  "principal_theorems": [
+    "CircuitCorrectness.Target.step_soundness",
+    "CircuitCorrectness.Target.step_completeness",
+    "CircuitCorrectness.Target.step_determinism",
+    "CircuitCorrectness.Target.connected_steps",
+    "CircuitCorrectness.Target.connected360"
+  ],
+  "supporting_axiom_theorems": 79,
+  "principal_axiom_theorems": 5,
+  "allowed_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "measurements": {
+    "clean_total_seconds": 1596.050550542,
+    "clean_build_seconds": 1594.3334820000005,
+    "maximum_child_rss_bytes": 8438136832,
+    "sampled_peak_tree_rss_bytes": 11169005568,
+    "local_modules": 280,
+    "external_dependencies_cached": true,
+    "standalone_seconds": 4.5491085829999065,
+    "standalone_imports_cached": true,
+    "acceptance_sum_phase_seconds": 95.62092537699664
+  },
+  "review_followup_resolutions": {
+    "bounded_integer_axiom_coverage": "Expanded to79 supporting theorems; latest strict run passes.",
+    "clean_build_and_final_recheck": "All280modules clean-built; standalone and strict final rerun pass.",
+    "documentation_refresh": "README,REPORT,PROOF_STATUS and results index updated.",
+    "source_fingerprint_scope": "Reported exactly106files in poseidon_97/Nova; baseline not expanded."
+  },
+  "remaining_obligations": [],
+  "evidence_sha256": {
+    "PROOF_STATUS.md": "6a3590a0f08b9007e148f9ad850e13a978aababf15165b5fd44ff2572b54aaab",
+    "README.md": "ca22241db3e9ed88050a1821f28bb660afba251a4a440f4e3c12bd581b6d0ea5",
+    "REPORT.md": "caa006dcb2a1a8acda35bbce317d2ec84307ec8fe869a46c1873f3b886dd173d",
+    "artifacts/source_manifest.json": "bf357f11e8b1e8879e87218f232f0da4eb77990b4b53771d9efcca6ee9df051b",
+    "exporter/src/main.rs": "1e5403599812288dbfd31da4f42e9d34b8446bc3950139d1da19f8bfb30530ba",
+    "lean/Certification.lean": "d6c7aecc05113734b6a29110b5c22c5495a362877c7db35bf7c40590b077f134",
+    "lean/CircuitCorrectness/ActualHash.lean": "c569b61daf86a058dabd0c2621bb74be56dd2797963bffd22f87c2db0c436549",
+    "lean/CircuitCorrectness/Complete.lean": "e76b1031c166d4001d7ed25a47f1b5cf491e1af7693762715a92c0f8dc58e092",
+    "lean/CircuitCorrectness/DctProgramCertificates/All.lean": "ab473c8ababde8eeb09c885014f501319d8c6e813ec06f7cca611e7597aae571",
+    "lean/CircuitCorrectness/DctSpec.lean": "aed87c5eb69dfa4f3b38747b547d422c0fc3cca9cee70f503deb377f781e33d7",
+    "lean/CircuitCorrectness/ProgramCertificates/All.lean": "2e26348d92c1184509914bd1eecb65b40e80ecf37fb30b10bcaa5dffc119911b",
+    "lean/CircuitCorrectness/SatisfyingWitness.lean": "93fdd35112c45ba7113c0c3bd39868cec837e918892d0045c196e3c1eee0e4cc",
+    "lean/CircuitCorrectness/Seed.lean": "c3776c2c228267e86f9cd651d99004cbb207284a8b55c99f37e319127ab18954",
+    "lean/CircuitCorrectness/Spec.lean": "455ea6affe5b627e1dec54e40eb54f1be4cee5769e9134f2a5531cb99ab9096e",
+    "lean/CircuitCorrectness/Target.lean": "fa20714f66bc535a451d12ab7523efdc3dec84d464e00f720b7f879874ffab99",
+    "lean/lake-manifest.json": "43f1ffa81f5971c333b53a11229efa39d0369b9f6379b15dd177cb87d2f170c1",
+    "lean/lean-toolchain": "db7bb24b756d745bbde83fe92718b51bd3625dae3701ba0f598d0eedcd3f3028",
+    "results/README.md": "2ee8a3419fc343c3451cddd9decd01c9f048e1a0a645f914d20cdab6744b38c0",
+    "results/acceptance_final.log": "70a5cf4ef7db67af94b2c5cdf6b970050d11460891fa8b6cdf5419768c453080",
+    "results/artifact_validation.json": "2be9aecd2be206ee0c3e094d3ed9b4afce69a08ab7632771affc552da3dd795d",
+    "results/axiom_audit.json": "bb6d82e80856fcac2747e03b1089363cd595efa4481e7704da6e264c09ce47e2",
+    "results/clean_build_modules/Certification.log": "9969a3b271e2205e4348e3e2966ca4acbdf564cffcaa2842629f0f7a5a248124",
+    "results/clean_certification.resources.json": "02aeefd059fb21e267d46729a96fc57828d55a2d7d0cfc12cd5a36b7addb360a",
+    "results/environment.json": "3fa8c1af4a750656a3b254dc9848853bddb21db8bdc89d5208de1e61353a4435",
+    "results/final_semantic_review.json": "77da85f0a9e758c37f0f2da0ea8295e14b7a672d2db9e1142a3f62002a96a555",
+    "results/final_validation_review.json": "503a30d5c6e51bca7329014f8fca59f663bc556171a5c05d0b00f19d5ded27e4",
+    "results/full_axiom_audit.json": "9f7b1f8a3d9925ee5b77f7d2fc1b4d64a0e16ed6ef299e3563739befb1c18061",
+    "results/lean_certificate_rejection.log": "e3169b0580c606151803e2918921c77391872b08afab28d56ead0eb4e4a9423c",
+    "results/lean_differential.log": "bd6035e5510a96f3e93381bc6ee21131003ef614efd85d6d9ca6c80e925e574c",
+    "results/proof_source_scan.json": "0ddb29e0edcfe3107d680e0039362ed838a7d53a37e2f984830c1aa1d953c472",
+    "results/reference_validation.json": "021279a636dca26c8097561e525cb0cf304abbb3df6f3db11f953839d8d2130b",
+    "results/rust_export.log": "9b9bd67a709dffcf4e9fbb1453a31332d21d28d188106c1aa81888468e34a444",
+    "results/rust_validation.json": "2541fd473a9926426e1e4e9357620f4eba118289636521004d6aea9db987dfd0",
+    "results/standalone_lean.log": "d221a908c21040e72068938ed5dec9cf3fdd56a31f6df2f91d285e94029a21f3",
+    "results/standalone_lean.resources.json": "dc3ddeb8c6e27292cf64df01af5274c22943cac3fd13ec239ac0b2aa00688efb",
+    "results/verification.json": "f743e7b5471b345b9cd63451527737ebab9c2cffa1aa51a11a85cf4b1dc30632",
+    "scripts/audit.py": "f61c0075a899e8589ffafd1b2537cd380bfc63f394ad6ae490dadc2a4ef2cade",
+    "scripts/clean_build.py": "10109db4c6ed884fd2095f7ffa1e0065fa16b88d62a61d588698a716875aa98e",
+    "scripts/sources.py": "1951c6cab970f74e25cd079b168c3740bac3bbdec3cd9af90e88e885d184f79f",
+    "scripts/verify.py": "bd39d56090eae70ac6e02fdb7af264dfce56a63fe3a8b63de2d11b09695e1246"
+  }
+}

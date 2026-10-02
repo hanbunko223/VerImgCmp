@@ -1,0 +1,29 @@
+{
+  "platform": "macOS-15.6.1-arm64-arm-64bit",
+  "python": "3.12.14 (main, Aug 25 2026, 13:50:33) [Clang 22.1.3 ]",
+  "hardware": "Hardware:\n\n    Hardware Overview:\n\n      Model Name: MacBook Pro\n      Model Identifier: MacBookPro18,3\n      Model Number: MKGP3LL/A\n      Chip: Apple M1 Pro\n      Total Number of Cores: 8 (6 performance and 2 efficiency)\n      Memory: 16 GB\n      System Firmware Version: 11881.140.96\n      OS Loader Version: 11881.140.96\n      Serial Number (system): JXCF3LXQCN\n      Hardware UUID: DE7BCD91-6341-5C53-B5FB-019346D726F1\n      Provisioning UDID: 00006000-000C299E3A62801E\n      Activation Lock Status: Disabled",
+  "rustc": "rustc 1.90.0 (1159e78c4 2025-09-14)\nbinary: rustc\ncommit-hash: 1159e78c4747b02ef996e55082b704c09b970588\ncommit-date: 2025-09-14\nhost: aarch64-apple-darwin\nrelease: 1.90.0\nLLVM version: 20.1.8",
+  "cargo": "cargo 1.90.0 (840b83a10 2025-07-30)",
+  "git_revision": "19438c2d539e8fcf6aeed9ab855e42b9d8f5c6b2",
+  "flags": {
+    "RUSTFLAGS": "-C target-cpu=native",
+    "CARGO_PROFILE_RELEASE_LTO": "thin",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1"
+  },
+  "threads": 8,
+  "steps": 360,
+  "proof_count": 1,
+  "sha256": {
+    "poseidon_97/experiment/fixture/HD.json": "a995c8f26ee1c444f9a34fc67282c6f39d246f76127575b6a0bc9e78b17da404",
+    "poseidon_97/experiment/fixture/HD-digest.json": "6c5b297d6c7faa8a3ae2c98bb8351391d79ef47310991282a23cb4207b4881e2",
+    "poseidon_97/experiment/fixture/HD-coefficients.json": "62cb190439223016d009c5428d011987786c1ab53da3aaf9ba1720105c891f82",
+    "poseidon_97/experiment/fixture/HD-legacy-coefficients.json": "2300949cc7f79ee8d34bc998850a3e7e4de291eeb5d43a4c2fa6bf18d8ed2065",
+    "samples/HD.png": "a5f79d974401b6b1a75b042178d4751a5c1f90d5aac74dca46c9cf74b1d5b138",
+    "poseidon_97/Cargo.lock": "17311849e0c7e9401cc144d61b85a72428d45e859cc81fd41d0eea790efbad5f",
+    "poseidon_97/experiment/legacy_control/Cargo.lock": "71aaafe24aedd0531f8241908bfc304bff6013b47ac64adf791e3cd848ca5ef3",
+    "poseidon_97/target/release/poseidon_97": "3e3aad0cb029da4e21da0c8a29e06aa8ce63796f68e6b660290b7526cf916ae4",
+    "poseidon_97/target/release/poseidon_hh_control": "8afa69b42ba9b5801a858d20bb17080dc255deed863c394511ceff1a411b53db"
+  },
+  "fixture_conversion": "Existing create_input.py samples/HD.png HD.json --resolution HD (copied cached fixture; flattened RGB equality verified)",
+  "rss_budget": 10737418240
+}

@@ -1,0 +1,340 @@
+{
+  "format": "poseidon97-semantic-scope-review-v1",
+  "reviewed_at_utc": "2026-09-28T13:47:30.306362+00:00",
+  "semantic_status": "pass",
+  "principal_propositions_weakened": false,
+  "missing_mathematical_obligations_found": [],
+  "method": "Read-only source and proof-chain review. No builds launched. Existing successful gate and axiom records inspected; parent clean build/final rerun are separate.",
+  "target": {
+    "rows": 97630,
+    "sparse_terms": 832541,
+    "rows_sha256": "120153f7a3043425cc47718bbd175ac4f9c777cca833b4691f4f64d444393dd3",
+    "incoming": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "outgoing": [
+      97632,
+      77323,
+      2,
+      97633
+    ],
+    "one": 97634
+  },
+  "row_accounting": {
+    "bytes": 69120,
+    "first_dct": 5120,
+    "fused_dct_q_horner": 3080,
+    "packing": 2816,
+    "poseidon8": 13192,
+    "poseidon2": 4284,
+    "prepared_equalities": 17,
+    "counter": 1
+  },
+  "coverage": [
+    {
+      "requirement": "original_target",
+      "status": "covered",
+      "conclusion": "Original16\u00d7160 RGB poseidon_97 application step; HD count360. Harness includes production source and invokes DctqStepCircuit::synthesize.",
+      "evidence": [
+        {
+          "file": "../poseidon_97/src/input.rs",
+          "line": 5
+        },
+        {
+          "file": "../poseidon_97/src/input.rs",
+          "line": 36
+        },
+        {
+          "file": "exporter/src/main.rs",
+          "line": 3
+        },
+        {
+          "file": "exporter/src/main.rs",
+          "line": 69
+        }
+      ]
+    },
+    {
+      "requirement": "universal_targets",
+      "status": "covered",
+      "conclusion": "Exact original soundness/completeness/determinism propositions are retained, without a desired output equality or gadget correctness hypothesis. Completeness handles every valid image and every incoming field state.",
+      "evidence": [
+        {
+          "file": "lean/CircuitCorrectness/Target.lean",
+          "line": 19
+        },
+        {
+          "file": "lean/CircuitCorrectness/Target.lean",
+          "line": 24
+        },
+        {
+          "file": "lean/CircuitCorrectness/Target.lean",
+          "line": 29
+        },
+        {
+          "file": "lean/CircuitCorrectness/Complete.lean",
+          "line": 16
+        },
+        {
+          "file": "lean/Certification.lean",
+          "line": 5
+        }
+      ]
+    },
+    {
+      "requirement": "independent_computation",
+      "status": "covered",
+      "conclusion": "Spec is functional, independent of R1CS satisfaction: A\u00b7(X\u2212128)\u00b7A\u1d40\u2299M direct integer double sum, original-byte hashing, retained Horner evaluation, challenge preservation and field counter increment. No runtime normalization or coefficient rounding.",
+      "evidence": [
+        {
+          "file": "lean/CircuitCorrectness/Spec.lean",
+          "line": 80
+        },
+        {
+          "file": "lean/CircuitCorrectness/Spec.lean",
+          "line": 100
+        },
+        {
+          "file": "lean/CircuitCorrectness/Spec.lean",
+          "line": 120
+        },
+        {
+          "file": "../poseidon_97/src/dctq.rs",
+          "line": 133
+        }
+      ]
+    },
+    {
+      "requirement": "dct_pruning_order",
+      "status": "covered",
+      "conclusion": "Actual5120 first-stage and3080 fused rows imply the independent transform. Threshold97,51/13/13 counts, omitted zeros and canonical row/column/RGB order are checked.",
+      "evidence": [
+        {
+          "file": "lean/CircuitCorrectness/ParameterChecks.lean",
+          "line": 9
+        },
+        {
+          "file": "lean/CircuitCorrectness/ParameterChecks.lean",
+          "line": 19
+        },
+        {
+          "file": "lean/CircuitCorrectness/DctSpec.lean",
+          "line": 75
+        },
+        {
+          "file": "lean/CircuitCorrectness/DctProgramCertificates/All.lean",
+          "line": 88
+        },
+        {
+          "file": "../poseidon_97/src/circuit.rs",
+          "line": 254
+        }
+      ]
+    },
+    {
+      "requirement": "bytes_and_packing",
+      "status": "covered",
+      "conclusion": "Exact byte prefix, Booleanity, recomposition, canonical pixel-wire mapping and all16 actual packing segments are connected to the original uncentered bytes and240-bit chunks.",
+      "evidence": [
+        {
+          "file": "lean/CircuitCorrectness/ConcreteBytes.lean",
+          "line": 92
+        },
+        {
+          "file": "lean/CircuitCorrectness/ConcreteBytes.lean",
+          "line": 120
+        },
+        {
+          "file": "lean/CircuitCorrectness/Seed.lean",
+          "line": 46
+        },
+        {
+          "file": "lean/CircuitCorrectness/PackingCertificates.lean",
+          "line": 29
+        },
+        {
+          "file": "lean/CircuitCorrectness/ActualHash.lean",
+          "line": 15
+        }
+      ]
+    },
+    {
+      "requirement": "poseidon_and_tree",
+      "status": "covered",
+      "conclusion": "S-box and optimized round proofs plus kernel-checked constants/checkpoints establish both complete arities. Exact wire-renaming certificates cover all52 actual nodes, then row tree, digest tree and incoming hash chaining are composed.",
+      "evidence": [
+        {
+          "file": "lean/CircuitCorrectness/PoseidonProgram.lean",
+          "line": 139
+        },
+        {
+          "file": "lean/CircuitCorrectness/HashTrace8/All.lean",
+          "line": 363
+        },
+        {
+          "file": "lean/CircuitCorrectness/HashTrace2/All.lean",
+          "line": 353
+        },
+        {
+          "file": "lean/CircuitCorrectness/HashWiring.lean",
+          "line": 100
+        },
+        {
+          "file": "lean/CircuitCorrectness/HashNodeSound.lean",
+          "line": 64
+        },
+        {
+          "file": "lean/CircuitCorrectness/ActualHash.lean",
+          "line": 9
+        },
+        {
+          "file": "../poseidon_97/src/poseidon.rs",
+          "line": 127
+        },
+        {
+          "file": "../nova60/Nova/src/frontend/gadgets/poseidon/sponge/api.rs",
+          "line": 28
+        }
+      ]
+    },
+    {
+      "requirement": "complete_row_coverage",
+      "status": "covered",
+      "conclusion": "Constructive seed plus well-formed straight-line execution satisfies all97630 rows via take69120/drop69120. This includes all17 prepared-hash equalities and the counter; prepared auxiliaries are not assumed correct.",
+      "evidence": [
+        {
+          "file": "lean/CircuitCorrectness/SatisfyingWitness.lean",
+          "line": 8
+        },
+        {
+          "file": "lean/CircuitCorrectness/ProgramCertificates/All.lean",
+          "line": 19
+        },
+        {
+          "file": "lean/CircuitCorrectness/ProgramCertificates/All.lean",
+          "line": 259
+        },
+        {
+          "file": "lean/CircuitCorrectness/ProgramCertificates/All.lean",
+          "line": 1167
+        },
+        {
+          "file": "../poseidon_97/src/circuit.rs",
+          "line": 161
+        },
+        {
+          "file": "../poseidon_97/src/circuit.rs",
+          "line": 182
+        }
+      ]
+    },
+    {
+      "requirement": "state_and360_steps",
+      "status": "covered",
+      "conclusion": "Actual input/output indices and challenge alias are preserved. Counter is field addition. Connected360 explicitly assumes adjacent state connection and does not verify Nova.",
+      "evidence": [
+        {
+          "file": "lean/CircuitCorrectness/Target.lean",
+          "line": 6
+        },
+        {
+          "file": "lean/CircuitCorrectness/Target.lean",
+          "line": 40
+        },
+        {
+          "file": "lean/CircuitCorrectness/Counter.lean",
+          "line": 17
+        },
+        {
+          "file": "lean/CircuitCorrectness/Composition.lean",
+          "line": 5
+        },
+        {
+          "file": "lean/CircuitCorrectness/Complete.lean",
+          "line": 46
+        }
+      ]
+    },
+    {
+      "requirement": "bounded_integer_interpretation",
+      "status": "covered",
+      "conclusion": "Separate coefficient bounds\u00b11554357600 and interval field-cast injectivity are proved, with exact240-bit chunk interpretation. State arithmetic remains over the actual Pallas scalar field.",
+      "evidence": [
+        {
+          "file": "lean/CircuitCorrectness/DctSpec.lean",
+          "line": 160
+        },
+        {
+          "file": "lean/CircuitCorrectness/DctSpec.lean",
+          "line": 170
+        },
+        {
+          "file": "lean/CircuitCorrectness/DctSpec.lean",
+          "line": 221
+        },
+        {
+          "file": "lean/CircuitCorrectness/Field.lean",
+          "line": 417
+        }
+      ]
+    }
+  ],
+  "source_preservation": {
+    "status": "pass",
+    "files_checked": 106,
+    "changed": []
+  },
+  "proof_integrity": {
+    "forbidden_source_hits": [],
+    "existing_full_axiom_audit_status": "pass",
+    "allowed_axioms": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "principal_theorems": [
+      "CircuitCorrectness.Target.step_soundness",
+      "CircuitCorrectness.Target.step_completeness",
+      "CircuitCorrectness.Target.step_determinism",
+      "CircuitCorrectness.Target.connected_steps",
+      "CircuitCorrectness.Target.connected360"
+    ]
+  },
+  "documentation_review": {
+    "status": "pass",
+    "summary": "README and REPORT were updated during this review and re-read. Current scope, universal theorem statements, field/integer distinction, trust boundary and exclusions match the proof sources. Final clean measurements are explicitly pending rather than claimed complete.",
+    "sha256": {
+      "README.md": "ca22241db3e9ed88050a1821f28bb660afba251a4a440f4e3c12bd581b6d0ea5",
+      "REPORT.md": "5356907b828a2b1adeadafaf32c11d864f6648e5eaeac8121603ed66b1ad2732"
+    }
+  },
+  "resolved_findings": [
+    {
+      "id": "stale_documentation",
+      "resolution": "Parent replaced obsolete incomplete/absent-theorem descriptions; current text re-reviewed."
+    },
+    {
+      "id": "integer_bound_axiom_names",
+      "resolution": "scripts/audit.py now explicitly enumerates coefficient bounds/injectivity, pruning and exact packing interpretation; parent final rerun will refresh records."
+    }
+  ],
+  "open_findings": [],
+  "existing_acceptance_record": {
+    "status": "pass",
+    "certified": true,
+    "note": "Previously completed full run; does not claim the ongoing clean build has finished."
+  },
+  "trust_boundary": "Rust compiler/build environment, production-source inclusion, ShapeCS exporter and source/artifact/import mapping remain accepted extraction trust. Mathematical concrete-row-to-independent-Spec correspondence is proved within Lean.",
+  "excluded_claims": [
+    "cryptographic security",
+    "Fiat\u2013Shamir",
+    "public-file parsing",
+    "Nova folding or augmented-circuit verification",
+    "Spartan or proof-verifier correctness",
+    "universal correctness of the Rust witness generator"
+  ],
+  "final_clean_build_status": "in_progress_when_review_requested"
+}

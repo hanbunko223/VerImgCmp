@@ -1,0 +1,420 @@
+{
+  "original": {
+    "application_s": {
+      "median": 42.44445825,
+      "min": 40.169401125,
+      "max": 43.38776625
+    },
+    "backend_s": {
+      "median": 26.356503916,
+      "min": 24.734924375,
+      "max": 26.375876
+    },
+    "compressed_artifact_bytes": {
+      "median": 28248,
+      "min": 28248,
+      "max": 28248
+    },
+    "compressed_proof_bytes": {
+      "median": 27719,
+      "min": 27719,
+      "max": 27719
+    },
+    "compressed_serialization_s": {
+      "median": 0.000683667,
+      "min": 0.000653625,
+      "max": 0.010075376
+    },
+    "compressed_verify_s": {
+      "median": 0.272520625,
+      "min": 0.254947875,
+      "max": 0.300664666
+    },
+    "compression_s": {
+      "median": 11.682999875,
+      "min": 11.058766916,
+      "max": 12.418368833
+    },
+    "compression_setup_s": {
+      "median": 0.311061208,
+      "min": 0.302827458,
+      "max": 0.312438917
+    },
+    "peak_rss_bytes": {
+      "median": 544030720,
+      "min": 543358976,
+      "max": 687456256
+    },
+    "preparation_s": {
+      "median": 0.744393125,
+      "min": 0.740689625,
+      "max": 0.785681583
+    },
+    "proof_count": {
+      "median": 1,
+      "min": 1,
+      "max": 1
+    },
+    "prove_step_s": {
+      "median": 26.267955623000013,
+      "min": 24.641929081999997,
+      "max": 26.279320091000006
+    },
+    "recursive_artifact_bytes": {
+      "median": 17617088,
+      "min": 17617088,
+      "max": 17617088
+    },
+    "recursive_proof_bytes": {
+      "median": 17616557,
+      "min": 17616557,
+      "max": 17616557
+    },
+    "recursive_prover_s": {
+      "median": 27.100897041,
+      "min": 25.475614,
+      "max": 27.161557583
+    },
+    "recursive_verify_s": {
+      "median": 0.144011291,
+      "min": 0.141893541,
+      "max": 0.156101416
+    },
+    "serialization_s": {
+      "median": 0.110726709,
+      "min": 0.104536291,
+      "max": 0.112050917
+    },
+    "setup_s": {
+      "median": 2.481628625,
+      "min": 2.477146291,
+      "max": 2.574812708
+    },
+    "statement_s": {
+      "median": 0.333093667,
+      "min": 0.326483125,
+      "max": 0.34671
+    },
+    "steps": {
+      "median": 360,
+      "min": 360,
+      "max": 360
+    },
+    "threads": {
+      "median": 8,
+      "min": 8,
+      "max": 8
+    },
+    "peak_footprint_bytes": {
+      "median": 287328512,
+      "min": 236275840,
+      "max": 293439872
+    },
+    "sampled_tree_peak_bytes": {
+      "median": 544374784,
+      "min": 538886144,
+      "max": 688472064
+    },
+    "wall_s": {
+      "median": 42.62833624999621,
+      "min": 40.222533791995374,
+      "max": 43.59474841601332
+    },
+    "recursive_plus_compression_s": {
+      "median": 38.783896916,
+      "min": 36.534380916,
+      "max": 39.579926416
+    },
+    "backend_plus_compression_s": {
+      "median": 38.039503791,
+      "min": 35.793691291,
+      "max": 38.794244833
+    },
+    "internal": {
+      "augmented_synthesize_s": {
+        "median": 3.2217428790000024,
+        "min": 3.210114578999997,
+        "max": 3.223777501999999
+      },
+      "commit_e_s": {
+        "median": 1.4536132349999995,
+        "min": 1.3592737099999996,
+        "max": 1.5053757439999995
+      },
+      "commit_w_s": {
+        "median": 12.710980499999993,
+        "min": 12.013386792000006,
+        "max": 12.786496123000004
+      },
+      "fold_witness_s": {
+        "median": 0.3900107449999998,
+        "min": 0.3007527439999998,
+        "max": 0.409405473
+      },
+      "multiply_vec_z1_s": {
+        "median": 3.9226233719999994,
+        "min": 3.6708047850000014,
+        "max": 3.964644789
+      },
+      "multiply_vec_z2_s": {
+        "median": 3.916230026999997,
+        "min": 3.6554422079999997,
+        "max": 3.975233002999999
+      },
+      "prove_helper_s": {
+        "median": 3.1851059139999984,
+        "min": 2.923551380999999,
+        "max": 3.2508442089999994
+      }
+    },
+    "standalone_recursive_verify_s": {
+      "median": 0.159585709,
+      "min": 0.142030458,
+      "max": 0.177262792
+    },
+    "standalone_recursive_application_s": {
+      "median": 3.120353125,
+      "min": 3.00859975,
+      "max": 3.62652825
+    },
+    "standalone_recursive_setup_s": {
+      "median": 2.51736425,
+      "min": 2.453840125,
+      "max": 3.011169625
+    },
+    "standalone_recursive_statement_s": {
+      "median": 0.33566675,
+      "min": 0.324525167,
+      "max": 0.367439667
+    },
+    "standalone_compressed_verify_s": {
+      "median": 0.262585709,
+      "min": 0.252500958,
+      "max": 0.313028083
+    },
+    "standalone_compressed_application_s": {
+      "median": 3.457755708,
+      "min": 3.355242542,
+      "max": 3.534149375
+    },
+    "standalone_compressed_setup_s": {
+      "median": 2.5208538750000002,
+      "min": 2.460916875,
+      "max": 2.55344275
+    },
+    "standalone_compressed_statement_s": {
+      "median": 0.327958333,
+      "min": 0.323315542,
+      "max": 0.329880792
+    }
+  },
+  "new": {
+    "application_s": {
+      "median": 40.518476291,
+      "min": 38.535345625,
+      "max": 41.764313959
+    },
+    "backend_s": {
+      "median": 24.815260291,
+      "min": 23.466389833,
+      "max": 25.962427625
+    },
+    "compressed_artifact_bytes": {
+      "median": 28281,
+      "min": 28281,
+      "max": 28281
+    },
+    "compressed_proof_bytes": {
+      "median": 27719,
+      "min": 27719,
+      "max": 27719
+    },
+    "compressed_serialization_s": {
+      "median": 0.000658751,
+      "min": 0.000602126,
+      "max": 0.000738082
+    },
+    "compressed_verify_s": {
+      "median": 0.259567416,
+      "min": 0.249275333,
+      "max": 0.261288
+    },
+    "compression_s": {
+      "median": 11.390758875,
+      "min": 11.102091084,
+      "max": 11.690685083
+    },
+    "compression_setup_s": {
+      "median": 0.302489792,
+      "min": 0.292364834,
+      "max": 0.304228709
+    },
+    "peak_rss_bytes": {
+      "median": 529121280,
+      "min": 527237120,
+      "max": 654262272
+    },
+    "preparation_s": {
+      "median": 0.463784625,
+      "min": 0.461540375,
+      "max": 0.593257583
+    },
+    "proof_count": {
+      "median": 1,
+      "min": 1,
+      "max": 1
+    },
+    "prove_step_s": {
+      "median": 24.731122679999995,
+      "min": 23.383125674000016,
+      "max": 25.875044620000008
+    },
+    "recursive_artifact_bytes": {
+      "median": 17617121,
+      "min": 17617121,
+      "max": 17617121
+    },
+    "recursive_proof_bytes": {
+      "median": 17616557,
+      "min": 17616557,
+      "max": 17616557
+    },
+    "recursive_prover_s": {
+      "median": 25.276800666,
+      "min": 23.930174458,
+      "max": 26.555685208
+    },
+    "recursive_verify_s": {
+      "median": 0.139402416,
+      "min": 0.136963541,
+      "max": 0.141894042
+    },
+    "serialization_s": {
+      "median": 0.104108792,
+      "min": 0.103189208,
+      "max": 0.10746075
+    },
+    "setup_s": {
+      "median": 2.4749267919999998,
+      "min": 2.456503166,
+      "max": 2.657848333
+    },
+    "statement_s": {
+      "median": 0.256710125,
+      "min": 0.253253708,
+      "max": 0.342827791
+    },
+    "steps": {
+      "median": 360,
+      "min": 360,
+      "max": 360
+    },
+    "threads": {
+      "median": 8,
+      "min": 8,
+      "max": 8
+    },
+    "peak_footprint_bytes": {
+      "median": 276367872,
+      "min": 243435136,
+      "max": 281724992
+    },
+    "sampled_tree_peak_bytes": {
+      "median": 530137088,
+      "min": 527663104,
+      "max": 655278080
+    },
+    "wall_s": {
+      "median": 40.66649662499549,
+      "min": 38.72074541600887,
+      "max": 41.98724200000288
+    },
+    "recursive_plus_compression_s": {
+      "median": 36.967485749,
+      "min": 35.032265542,
+      "max": 37.946444083
+    },
+    "backend_plus_compression_s": {
+      "median": 36.505945374,
+      "min": 34.568480917,
+      "max": 37.3531865
+    },
+    "internal": {
+      "augmented_synthesize_s": {
+        "median": 3.2016722850000012,
+        "min": 3.167124993999998,
+        "max": 3.251281409
+      },
+      "commit_e_s": {
+        "median": 1.4707804650000011,
+        "min": 1.3716132509999994,
+        "max": 1.486204868
+      },
+      "commit_w_s": {
+        "median": 11.529616503000003,
+        "min": 10.949481505999996,
+        "max": 12.052302287
+      },
+      "fold_witness_s": {
+        "median": 0.35925280600000004,
+        "min": 0.30646442300000004,
+        "max": 0.38912954699999963
+      },
+      "multiply_vec_z1_s": {
+        "median": 3.6954971599999986,
+        "min": 3.494274257999994,
+        "max": 4.054890993999999
+      },
+      "multiply_vec_z2_s": {
+        "median": 3.695167048000001,
+        "min": 3.479053172999997,
+        "max": 4.041829837000001
+      },
+      "prove_helper_s": {
+        "median": 3.230916456999999,
+        "min": 2.958974044999998,
+        "max": 3.350410726000001
+      }
+    },
+    "standalone_recursive_verify_s": {
+      "median": 0.135456708,
+      "min": 0.135014916,
+      "max": 0.1970945
+    },
+    "standalone_recursive_application_s": {
+      "median": 2.977582292,
+      "min": 2.916853333,
+      "max": 3.123436083
+    },
+    "standalone_recursive_setup_s": {
+      "median": 2.4950347920000002,
+      "min": 2.435363791,
+      "max": 2.585212583
+    },
+    "standalone_recursive_statement_s": {
+      "median": 0.258823833,
+      "min": 0.255486416,
+      "max": 0.261124291
+    },
+    "standalone_compressed_verify_s": {
+      "median": 0.257072667,
+      "min": 0.24476775,
+      "max": 0.286756041
+    },
+    "standalone_compressed_application_s": {
+      "median": 3.258870125,
+      "min": 3.217023916,
+      "max": 3.4333025
+    },
+    "standalone_compressed_setup_s": {
+      "median": 2.458927917,
+      "min": 2.421828542,
+      "max": 2.58990125
+    },
+    "standalone_compressed_statement_s": {
+      "median": 0.251413083,
+      "min": 0.244983959,
+      "max": 0.25550775
+    }
+  }
+}

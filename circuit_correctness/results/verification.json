@@ -1,0 +1,150 @@
+{
+  "status": "pass",
+  "certified": true,
+  "checks": [
+    {
+      "name": "rust_export",
+      "exit_code": 0,
+      "seconds": 61.9633685000008,
+      "maximum_child_rss_bytes": 935297024,
+      "log": "results/rust_export.log"
+    },
+    {
+      "name": "artifact_validation",
+      "exit_code": 0,
+      "seconds": 15.503026999998838,
+      "maximum_child_rss_bytes": 694763520,
+      "log": "results/artifact_validation.log"
+    },
+    {
+      "name": "parameter_data_check",
+      "exit_code": 0,
+      "seconds": 0.34084124997025356,
+      "maximum_child_rss_bytes": 342491136,
+      "log": "results/parameter_data_check.log"
+    },
+    {
+      "name": "row_data_check",
+      "exit_code": 0,
+      "seconds": 1.2990032089874148,
+      "maximum_child_rss_bytes": 383926272,
+      "log": "results/row_data_check.log"
+    },
+    {
+      "name": "byte_certificates_data_check",
+      "exit_code": 0,
+      "seconds": 0.0820399170042947,
+      "maximum_child_rss_bytes": 16809984,
+      "log": "results/byte_certificates_data_check.log"
+    },
+    {
+      "name": "program_certificates_data_check",
+      "exit_code": 0,
+      "seconds": 0.07693774998188019,
+      "maximum_child_rss_bytes": 17399808,
+      "log": "results/program_certificates_data_check.log"
+    },
+    {
+      "name": "dct_certificates_data_check",
+      "exit_code": 0,
+      "seconds": 1.0140412910259329,
+      "maximum_child_rss_bytes": 347078656,
+      "log": "results/dct_certificates_data_check.log"
+    },
+    {
+      "name": "packing_certificates_data_check",
+      "exit_code": 0,
+      "seconds": 1.0112911660107784,
+      "maximum_child_rss_bytes": 345112576,
+      "log": "results/packing_certificates_data_check.log"
+    },
+    {
+      "name": "hash_trace_data_check",
+      "exit_code": 0,
+      "seconds": 1.2558452910161577,
+      "maximum_child_rss_bytes": 381435904,
+      "log": "results/hash_trace_data_check.log"
+    },
+    {
+      "name": "hash_trace_composition_data_check",
+      "exit_code": 0,
+      "seconds": 0.07498774997657165,
+      "maximum_child_rss_bytes": 16613376,
+      "log": "results/hash_trace_composition_data_check.log"
+    },
+    {
+      "name": "hash_wiring_data_check",
+      "exit_code": 0,
+      "seconds": 2.91120354202576,
+      "maximum_child_rss_bytes": 547422208,
+      "log": "results/hash_wiring_data_check.log"
+    },
+    {
+      "name": "structured_comparison",
+      "exit_code": 0,
+      "seconds": 2.101328958000522,
+      "maximum_child_rss_bytes": 544030720,
+      "log": "results/structured_comparison.log"
+    },
+    {
+      "name": "python_reference",
+      "exit_code": 0,
+      "seconds": 0.733144625031855,
+      "maximum_child_rss_bytes": 342491136,
+      "log": "results/python_reference.log"
+    },
+    {
+      "name": "lean_foundation",
+      "exit_code": 0,
+      "seconds": 6.9685126669937745,
+      "maximum_child_rss_bytes": 726220800,
+      "log": "results/lean_foundation.log"
+    },
+    {
+      "name": "lean_certificate_rejection",
+      "exit_code": 0,
+      "seconds": 2.112913249991834,
+      "maximum_child_rss_bytes": 728711168,
+      "log": "results/lean_certificate_rejection.log"
+    },
+    {
+      "name": "lean_differential",
+      "exit_code": 0,
+      "seconds": 15.083363084006123,
+      "maximum_child_rss_bytes": 2162425856,
+      "log": "results/lean_differential.log"
+    },
+    {
+      "name": "axiom_audit",
+      "exit_code": 0,
+      "seconds": 12.05193854199024,
+      "maximum_child_rss_bytes": 2147549184,
+      "log": "results/axiom_audit.log"
+    },
+    {
+      "name": "full_certification",
+      "exit_code": 0,
+      "seconds": 2.3480160419712774,
+      "maximum_child_rss_bytes": 733233152,
+      "log": "results/full_certification.log"
+    },
+    {
+      "name": "full_axiom_audit",
+      "exit_code": 0,
+      "seconds": 4.976569916994777,
+      "maximum_child_rss_bytes": 2145353728,
+      "log": "results/full_axiom_audit.log"
+    }
+  ],
+  "mode": "full",
+  "artifact_only": false,
+  "source_before": {
+    "status": "pass",
+    "files_checked": 106
+  },
+  "source_after": {
+    "status": "pass",
+    "files_checked": 106
+  },
+  "foundation_checks_passed": true
+}

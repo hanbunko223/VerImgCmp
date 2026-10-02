@@ -21,13 +21,18 @@ type Hash2Arity = U2;
 
 const HASH8_DOMAIN_SEPARATOR: u32 = 0x4841_5348;
 const HASH2_DOMAIN_SEPARATOR: u32 = 0x5041_4952;
+pub const HH_CHALLENGE_DOMAIN_SEPARATOR: u32 = 0x5039_3731; // "P971"
 
 static HASH8_CONSTANTS: OnceLock<PoseidonConstants<Scalar, Hash8Arity>> = OnceLock::new();
 static HASH2_CONSTANTS: OnceLock<PoseidonConstants<Scalar, Hash2Arity>> = OnceLock::new();
 
 pub fn poseidon_hash_8(inputs: &[Scalar; HASH8_INPUTS]) -> Scalar {
+    poseidon_hash_8_with_domain(inputs, HASH8_DOMAIN_SEPARATOR)
+}
+
+pub fn poseidon_hash_8_with_domain(inputs: &[Scalar; HASH8_INPUTS], domain: u32) -> Scalar {
     let mut sponge = Sponge::<Scalar, Hash8Arity>::new_with_constants(hash8_constants(), Simplex);
-    sponge.start(hash8_pattern(), Some(HASH8_DOMAIN_SEPARATOR), &mut ());
+    sponge.start(hash8_pattern(), Some(domain), &mut ());
     sponge.absorb(HASH8_INPUTS as u32, inputs.as_slice(), &mut ());
     let digest = SpongeAPI::squeeze(&mut sponge, 1, &mut ())
         .into_iter()

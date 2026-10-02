@@ -1,0 +1,7 @@
+'CircuitCorrectness.exists_satisfying_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CircuitCorrectness.PoseidonProgram.hash_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CircuitCorrectness.HashProgram.program_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CircuitCorrectness.HashTree.chain_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CircuitCorrectness.HashTrace.checkpoints_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CircuitCorrectness.Target.matches_hash' depends on axioms: [propext, Classical.choice, Quot.sound]
+'CircuitCorrectness.Target.connected_steps_of_soundness' depends on axioms: [propext, Classical.choice, Quot.sound]

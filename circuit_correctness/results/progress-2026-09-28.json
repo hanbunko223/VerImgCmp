@@ -1,0 +1,27 @@
+{
+  "certified": false,
+  "goal_status": "active",
+  "completed_builds": [
+    "CircuitCorrectness.PoseidonProgram: sbox_sound, round_sound, rounds_sound, hash_sound",
+    "CircuitCorrectness.HashProgram: rowProgram_sound, program_sound",
+    "CircuitCorrectness.HashTrace: checkpoints_sound, hash_sound",
+    "CircuitCorrectness.ConcreteBytes: full actual 69120-row prefix",
+    "CircuitCorrectness.ProgramCertificates.All: full actual 28510-row suffix and wellformedness",
+    "CircuitCorrectness.Seed: preserved",
+    "CircuitCorrectness.SatisfyingWitness: exists_satisfying_step"
+  ],
+  "remaining": [
+    "Complete and compose both concrete Poseidon template round certificate chains",
+    "Complete exact wiring certificates for all 52 concrete hash nodes",
+    "Complete exact DCT/Horner and pixel/chunk packing certificates",
+    "Instantiate full step soundness, completeness, determinism and connected360 theorem",
+    "Full transitive axiom audit and strict verification command",
+    "Clean build measurement, source rechecks and final documentation"
+  ],
+  "source_check": {"status":"pass","files_checked":106},
+  "experimental_monolithic_hash_check": {
+    "result":"stopped for memory",
+    "observed_rss_kib":7498784,
+    "replacement":"bounded kernel-checked round snapshots"
+  }
+}

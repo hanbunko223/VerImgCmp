@@ -1,0 +1,205 @@
+   Compiling poseidon_97 v1.0.0 (/private/tmp/VerImgCmp-publish-20261002/SNARKPEG_Poseidon)
+warning: unused imports: `PIXELS_PER_STEP` and `artifact::RecursiveProofArtifact`
+  --> src/main.rs:17:5
+   |
+17 |     artifact::RecursiveProofArtifact,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+20 |     input::{resolution_spec, PIXELS_PER_STEP},
+   |                              ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `Read`, `Write`, `env`, and `fs::File`
+  --> src/main.rs:38:5
+   |
+38 |     env,
+   |     ^^^
+39 |     fs::File,
+   |     ^^^^^^^^
+40 |     io::{Read, Write},
+   |          ^^^^  ^^^^^
+
+warning: struct `RecursiveProofArtifact` is never constructed
+ --> src/artifact.rs:4:12
+  |
+4 | pub struct RecursiveProofArtifact<P> {
+  |            ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: variant `ScalarConversion` is never constructed
+  --> src/dctq.rs:88:5
+   |
+86 | pub enum DctqError {
+   |          --------- variant in this enum
+87 |     #[error("integer outside supported field encoding: {value}")]
+88 |     ScalarConversion { value: i128 },
+   |     ^^^^^^^^^^^^^^^^
+   |
+   = note: `DctqError` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: multiple fields are never read
+  --> src/prover.rs:80:9
+   |
+77 | pub struct ProvingResult {
+   |            ------------- fields in this struct
+...
+80 |     pub start_public_input: Vec<Scalar>,
+   |         ^^^^^^^^^^^^^^^^^^
+81 |     pub final_outputs: Vec<Scalar>,
+   |         ^^^^^^^^^^^^^
+82 |     pub input_digest_path: PathBuf,
+   |         ^^^^^^^^^^^^^^^^^
+83 |     pub input_digest_format: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^
+84 |     pub public_input_digest: Scalar,
+   |         ^^^^^^^^^^^^^^^^^^^
+85 |     pub coefficient_path: PathBuf,
+   |         ^^^^^^^^^^^^^^^^
+86 |     pub coefficient_format: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+87 |     pub public_coefficients_sha256: [u8; 32],
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+88 |     pub challenge_scheme: &'static str,
+   |         ^^^^^^^^^^^^^^^^
+89 |     pub coefficient_challenge: Scalar,
+   |         ^^^^^^^^^^^^^^^^^^^^^
+90 |     pub public_coefficient_evaluation: Scalar,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+91 |     pub num_steps: usize,
+   |         ^^^^^^^^^
+
+warning: `poseidon_97` (bin "poseidon_97" test) generated 5 warnings (run `cargo fix --bin "poseidon_97" --tests` to apply 2 suggestions)
+    Finished `release` profile [optimized] target(s) in 26.03s
+     Running unittests src/main.rs (SNARKPEG_Poseidon/target/release/deps/poseidon_97-c475f6eb5108ec38)
+
+running 33 tests
+test circuit::tests::byte_range_check_rejects_out_of_range_witness ... ok
+test circuit::tests::constant_magnitude_does_not_change_fused_horner_cost ... ok
+test coefficient::tests::constants_match_transform_shape ... ok
+test coefficient::tests::digest_limbs_are_unambiguous_little_endian_chunks ... ok
+test coefficient::tests::semantic_digest_and_evaluation_bind_value_sign_and_order ... ok
+test coefficient::tests::transcript_rebinding_defeats_a_public_vector_forged_for_an_old_point ... ok
+test coefficient::tests::zero_q_positions_are_rejected_before_evaluation ... ok
+test coefficient::validation_tests::versions_and_position_bounds_are_enforced ... ok
+test dctq::tests::bounds_and_masks ... ok
+test dctq::tests::constant_centered_zero ... ok
+test dctq::tests::python_differential_vectors ... ok
+test hash::tests::chain_hash_changes_when_step_digest_changes ... ok
+test hash::tests::pack_pixel_is_rgb_base256 ... ok
+test hash::tests::pack_ten_pixels_uses_24_bit_slots ... ok
+test hash::tests::reduce_row_hashes_uses_two_poseidon8_groups_then_poseidon2_root ... ok
+test hash::tests::row_hash_changes_when_one_channel_changes ... ok
+test hash::tests::step_digest_changes_when_last_channel_changes ... ok
+test input::tests::fhd_padding_is_zero_with_two_logical_rows_per_step ... ok
+test input::tests::four_k_uses_exact_fixed_pixel_schedule ... ok
+test input::tests::resolution_specs_match_expected_counts ... ok
+test poseidon::tests::poseidon_hash_2_gadget_matches_native ... ok
+test poseidon::tests::poseidon_hash_2_is_deterministic ... ok
+test poseidon::tests::poseidon_hash_8_gadget_matches_native ... ok
+test poseidon::tests::poseidon_hash_8_is_deterministic ... ok
+test prover::tests::host_preflight_rejects_one_mutated_public_coefficient ... ok
+test prover::tests::preparation_accepts_an_exact_versioned_public_coefficient_file ... ok
+test prover::tests::prepared_step_matches_host_hash ... ok
+test prover::tests::recursive_smoke_test ... ok
+test prover::tests::step_circuit_is_satisfiable ... ok
+test prover::tests::step_digest_changes_when_pixel_changes ... ok
+test statement::tests::canonical_scalar_parser_rejects_malleable_encodings ... ok
+test statement::tests::challenge_binds_every_public_transcript_component ... ok
+test statement::tests::rebinding_coefficients_invalidates_a_fingerprint_engineered_for_an_old_point ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.51s
+
+   Compiling poseidon_97 v1.0.0 (/private/tmp/VerImgCmp-publish-20261002/SNARKPEG_Poseidon)
+warning: unused imports: `PIXELS_PER_STEP` and `artifact::RecursiveProofArtifact`
+  --> src/main.rs:17:5
+   |
+17 |     artifact::RecursiveProofArtifact,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+20 |     input::{resolution_spec, PIXELS_PER_STEP},
+   |                              ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `Read`, `Write`, `env`, and `fs::File`
+  --> src/main.rs:38:5
+   |
+38 |     env,
+   |     ^^^
+39 |     fs::File,
+   |     ^^^^^^^^
+40 |     io::{Read, Write},
+   |          ^^^^  ^^^^^
+
+warning: struct `RecursiveProofArtifact` is never constructed
+ --> src/artifact.rs:4:12
+  |
+4 | pub struct RecursiveProofArtifact<P> {
+  |            ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: constant `MAX_ABS_COEFFICIENT` is never used
+  --> src/coefficient.rs:17:11
+   |
+17 | pub const MAX_ABS_COEFFICIENT: i64 = 1_554_357_600;
+   |           ^^^^^^^^^^^^^^^^^^^
+
+warning: constant `DIVISORS` is never used
+  --> src/dctq.rs:20:11
+   |
+20 | pub const DIVISORS: [[[i64; 8]; 8]; 3] = [
+   |           ^^^^^^^^
+
+warning: variant `ScalarConversion` is never constructed
+  --> src/dctq.rs:88:5
+   |
+86 | pub enum DctqError {
+   |          --------- variant in this enum
+87 |     #[error("integer outside supported field encoding: {value}")]
+88 |     ScalarConversion { value: i128 },
+   |     ^^^^^^^^^^^^^^^^
+   |
+   = note: `DctqError` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: constant `PIXELS_PER_STEP` is never used
+ --> src/input.rs:7:11
+  |
+7 | pub const PIXELS_PER_STEP: usize = DCTQ_HD_WIDTH * DCTQ_STEP_ROWS;
+  |           ^^^^^^^^^^^^^^^
+
+warning: multiple fields are never read
+  --> src/prover.rs:80:9
+   |
+77 | pub struct ProvingResult {
+   |            ------------- fields in this struct
+...
+80 |     pub start_public_input: Vec<Scalar>,
+   |         ^^^^^^^^^^^^^^^^^^
+81 |     pub final_outputs: Vec<Scalar>,
+   |         ^^^^^^^^^^^^^
+82 |     pub input_digest_path: PathBuf,
+   |         ^^^^^^^^^^^^^^^^^
+83 |     pub input_digest_format: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^^
+84 |     pub public_input_digest: Scalar,
+   |         ^^^^^^^^^^^^^^^^^^^
+85 |     pub coefficient_path: PathBuf,
+   |         ^^^^^^^^^^^^^^^^
+86 |     pub coefficient_format: &'static str,
+   |         ^^^^^^^^^^^^^^^^^^
+87 |     pub public_coefficients_sha256: [u8; 32],
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+88 |     pub challenge_scheme: &'static str,
+   |         ^^^^^^^^^^^^^^^^
+89 |     pub coefficient_challenge: Scalar,
+   |         ^^^^^^^^^^^^^^^^^^^^^
+90 |     pub public_coefficient_evaluation: Scalar,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+91 |     pub num_steps: usize,
+   |         ^^^^^^^^^
+
+warning: `poseidon_97` (bin "poseidon_97") generated 8 warnings (run `cargo fix --bin "poseidon_97"` to apply 2 suggestions)
+    Finished `release` profile [optimized] target(s) in 38.09s

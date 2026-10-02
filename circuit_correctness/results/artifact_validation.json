@@ -1,0 +1,48 @@
+{
+  "status": "pass",
+  "rows": 97630,
+  "terms": 832541,
+  "malformed_artifact_tests": [
+    {
+      "mutation": "output_wire",
+      "rejected": true
+    },
+    {
+      "mutation": "pixel_mapping",
+      "rejected": true
+    },
+    {
+      "mutation": "noncanonical_coefficient",
+      "rejected": true
+    },
+    {
+      "mutation": "out_of_range_index",
+      "rejected": true
+    },
+    {
+      "mutation": "matrix_entry",
+      "rejected": true
+    },
+    {
+      "mutation": "centering_constant",
+      "rejected": true
+    },
+    {
+      "mutation": "horner_order",
+      "rejected": true
+    },
+    {
+      "mutation": "poseidon_round_constant",
+      "rejected": true
+    },
+    {
+      "mutation": "missing_row",
+      "rejected": true
+    },
+    {
+      "mutation": "one_wire",
+      "rejected": true
+    }
+  ],
+  "evidence": "validation and fixed-artifact identity checks, not formal semantic proofs"
+}

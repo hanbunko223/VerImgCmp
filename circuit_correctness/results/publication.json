@@ -1,0 +1,31 @@
+{
+  "format": "poseidon97-publication-validation-v1",
+  "date": "2026-10-02",
+  "published_directory": "SNARKPEG_Poseidon",
+  "certified_source_identity": "poseidon_97",
+  "rust_tests_passed": 33,
+  "source_fingerprints_matched": 106,
+  "unchanged_lean_source_files": 294,
+  "unchanged_constraint_and_parameter_artifacts": true,
+  "strict_lean_gate": {
+    "status": "pass",
+    "certified": true,
+    "phases": 19,
+    "cache_policy": "Reused pinned dependency and compiled Lean caches; not a new clean-build benchmark"
+  },
+  "converter_matches_historical_hd_fixture": true,
+  "hd_saved_recursive_and_spartan_verified_in_separate_processes": true,
+  "hd_steps": 360,
+  "hd_proof_count": 1,
+  "excluded_claims": [
+    "Rust compiler/exporter correctness",
+    "cryptographic security",
+    "Nova/Spartan correctness",
+    "formal verification of host parsing or verifier"
+  ],
+  "retired_generated_files": [
+    "output/poseidon/HD-proof.json",
+    "output/poseidon/HD-proof-spartan.json",
+    "__pycache__/create_input.cpython-312.pyc"
+  ]
+}

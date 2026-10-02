@@ -1,0 +1,25 @@
+{
+  "status": "pass",
+  "cases": [
+    {
+      "fixture": 0,
+      "independent_spec_matches_rust": true
+    },
+    {
+      "fixture": 1,
+      "independent_spec_matches_rust": true
+    },
+    {
+      "fixture": 2,
+      "independent_spec_matches_rust": true
+    },
+    {
+      "fixture": 3,
+      "independent_spec_matches_rust": true
+    },
+    {
+      "fixture": 4,
+      "independent_spec_matches_rust": true
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+import CircuitCorrectness
+import CircuitCorrectness.Seed
+import CircuitCorrectness.ProgramCertificates.All
+import CircuitCorrectness.DctProgramCertificates.All
+import CircuitCorrectness.PackingCertificates
+import CircuitCorrectness.HashTrace2.All
+import CircuitCorrectness.HashTrace8.All
+import CircuitCorrectness.HashNodeSound
+import CircuitCorrectness.HashTree
+import CircuitCorrectness.SatisfyingWitness
+import CircuitCorrectness.Composition
+#print axioms CircuitCorrectness.modulus_prime
+#print axioms CircuitCorrectness.chunk_fits
+#print axioms CircuitCorrectness.signed_coefficients_fit
+#print axioms CircuitCorrectness.ParameterChecks.first_row
+#print axioms CircuitCorrectness.ParameterChecks.reciprocal_construction
+#print axioms CircuitCorrectness.ParameterChecks.red_count
+#print axioms CircuitCorrectness.ParameterChecks.green_count
+#print axioms CircuitCorrectness.ParameterChecks.blue_count
+#print axioms CircuitCorrectness.ParameterChecks.retained_count
+#print axioms CircuitCorrectness.Example.soundness
+#print axioms CircuitCorrectness.Example.completeness
+#print axioms CircuitCorrectness.Example.determinism
+#print axioms CircuitCorrectness.Example.missing_output_constraint_counterexample
+#print axioms CircuitCorrectness.Gadgets.boolean_soundness
+#print axioms CircuitCorrectness.Gadgets.boolean_completeness
+#print axioms CircuitCorrectness.Gadgets.linear_output
+#print axioms CircuitCorrectness.Gadgets.quintic_soundness
+#print axioms CircuitCorrectness.Gadgets.quintic_completeness
+#print axioms CircuitCorrectness.Gadgets.fused_horner
+#print axioms CircuitCorrectness.Gadgets.horner_append
+#print axioms CircuitCorrectness.Arithmetic.two_stages_eq_direct
+#print axioms CircuitCorrectness.Arithmetic.cast_firstStage
+#print axioms CircuitCorrectness.Arithmetic.cast_secondStage
+#print axioms CircuitCorrectness.Arithmetic.radix_packing_bound
+#print axioms CircuitCorrectness.Arithmetic.pixel_packing_bound
+#print axioms CircuitCorrectness.Arithmetic.chunk_packing_bound
+#print axioms CircuitCorrectness.Exported.row_count
+#print axioms CircuitCorrectness.Exported.challenge_alias
+#print axioms CircuitCorrectness.Exported.counter_row_present
+#print axioms CircuitCorrectness.Exported.counter_transition
+#print axioms CircuitCorrectness.Target.actual_challenge_preserved
+#print axioms CircuitCorrectness.Target.determinism_of_soundness
+#print axioms CircuitCorrectness.Byte.soundness
+#print axioms CircuitCorrectness.Byte.complete_of_values
+#print axioms CircuitCorrectness.ConcreteBytes.actual_prefix
+#print axioms CircuitCorrectness.ConcreteBytes.soundness
+#print axioms CircuitCorrectness.ConcreteBytes.complete_of_values
+#print axioms CircuitCorrectness.ConcreteBytes.pixel_wire
+#print axioms CircuitCorrectness.Seed.matches_iff
+#print axioms CircuitCorrectness.Seed.preserved
+#print axioms CircuitCorrectness.ProgramCertificates.correct
+#print axioms CircuitCorrectness.ProgramCertificates.wellFormed
+#print axioms CircuitCorrectness.ProgramCertificates.execution_satisfies
+#print axioms CircuitCorrectness.ProgramCertificates.execution_preserves
+#print axioms CircuitCorrectness.DctProgramCertificates.firstProgram_satisfied
+#print axioms CircuitCorrectness.DctProgramCertificates.hornerProgram_satisfied
+#print axioms CircuitCorrectness.DctProgramCertificates.exported_dct_sound
+#print axioms CircuitCorrectness.PackingCertificates.satisfied
+#print axioms CircuitCorrectness.PoseidonProgram.hash_sound
+#print axioms CircuitCorrectness.HashTrace.checkpoints_sound
+#print axioms CircuitCorrectness.HashTrace2.template_sound
+#print axioms CircuitCorrectness.HashTrace8.template_sound
+#print axioms CircuitCorrectness.HashWiring.left_sat
+#print axioms CircuitCorrectness.HashWiring.right_sat
+#print axioms CircuitCorrectness.HashWiring.combine_sat
+#print axioms CircuitCorrectness.HashWiring.sat48
+#print axioms CircuitCorrectness.HashWiring.sat49
+#print axioms CircuitCorrectness.HashWiring.sat50
+#print axioms CircuitCorrectness.HashWiring.sat51
+#print axioms CircuitCorrectness.HashWiring.left
+#print axioms CircuitCorrectness.HashWiring.right
+#print axioms CircuitCorrectness.HashWiring.combine
+#print axioms CircuitCorrectness.HashWiring.digest_left
+#print axioms CircuitCorrectness.HashWiring.digest_right
+#print axioms CircuitCorrectness.HashWiring.digest_combine_value
+#print axioms CircuitCorrectness.HashWiring.chain_value
+#print axioms CircuitCorrectness.HashTree.chain_sound
+#print axioms CircuitCorrectness.exists_satisfying_step
+#print axioms CircuitCorrectness.Target.connected_steps_of_soundness
+#print axioms CircuitCorrectness.DctSpec.coefficient_bounds
+#print axioms CircuitCorrectness.DctSpec.coefficient_global_bounds
+#print axioms CircuitCorrectness.DctSpec.bounded_cast_injective
+#print axioms CircuitCorrectness.DctSpec.coefficient_cast_injective
+#print axioms CircuitCorrectness.DctSpec.packedPixel_bound
+#print axioms CircuitCorrectness.DctSpec.packedChunk_bound
+#print axioms CircuitCorrectness.DctSpec.packedChunk_field_bound
+#print axioms CircuitCorrectness.DctSpec.packedChunk_cast_value
+#print axioms CircuitCorrectness.DctSpec.first_row_pruning
+#print axioms CircuitCorrectness.DctSpec.omitted_zero

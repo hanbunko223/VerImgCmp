@@ -1,0 +1,9 @@
+⚠ [1590/1590] Built CircuitCorrectness.Affine (2.4s)
+warning: CircuitCorrectness/Affine.lean:52:33: This simp argument is unused:
+  add_assoc
+
+Hint: Omit it from the simp argument list.
+  simp [ih, add_left_comm,̵ ̵a̵d̵d̵_̵a̵s̵s̵o̵c̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+Build completed successfully (1590 jobs).

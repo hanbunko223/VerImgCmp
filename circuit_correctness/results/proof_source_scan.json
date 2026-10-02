@@ -1,0 +1,11 @@
+{
+  "status": "pass",
+  "files": 294,
+  "patterns": [
+    "\\b(?:sorry|admit|sorryAx|native_decide|ofReduceBool|ofReduceNat|axiom|implemented_by|unsafe)\\b",
+    "\\bdebug\\.skipKernelTC\\b",
+    "\\bdebug\\.skipKernelCheck\\b"
+  ],
+  "findings": [],
+  "evidence_type": "lexical defense-in-depth check, not a substitute for Lean kernel and transitive axiom audit"
+}

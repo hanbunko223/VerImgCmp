@@ -1,0 +1,12 @@
+   Compiling nova-snark v0.60.0 (/private/tmp/VerImgCmp-publish-20261002/nova60/Nova)
+   Compiling poseidon97-constraint-exporter v0.1.0 (/private/tmp/VerImgCmp-publish-20261002/circuit_correctness/exporter)
+    Finished `release` profile [optimized] target(s) in 23.17s
+     Running `target/release/poseidon97-constraint-exporter check-export`
+{"status": "pass", "files_checked": 106}
+validated fixture 0
+validated fixture 1
+validated fixture 2
+validated fixture 3
+validated fixture 4
+{"status": "pass", "files_checked": 106}
+Export verified: 97630 constraints, 97634 auxiliary variables, digest 120153f7a3043425cc47718bbd175ac4f9c777cca833b4691f4f64d444393dd3

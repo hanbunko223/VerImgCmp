@@ -1,0 +1,9 @@
+**/target/
+**/__pycache__/
+**/.DS_Store
+circuit_correctness/.elan
+circuit_correctness/lean/.lake/
+output/
+log/
+SNARKPEG_Poseidon/benchmarks/runs/
+.venv/
