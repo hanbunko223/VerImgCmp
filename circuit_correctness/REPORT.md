@@ -1,4 +1,4 @@
-# Certified `poseidon_97` application-step R1CS
+# Certified `SNARKPEG-Poseidon` application-step R1CS
 
 The full exported step has universal Lean proofs of soundness, completeness,
 output determinism, and connected iteration. The strict acceptance command
