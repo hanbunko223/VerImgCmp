@@ -1,4 +1,4 @@
-# Formal correctness of the `poseidon_97` application step
+# Formal correctness of the `SPEG-Poseidon` application step
 
 The full exported step has Lean proofs of **soundness, completeness, and output
 determinism**, plus a theorem for 360 explicitly connected steps. The strict
