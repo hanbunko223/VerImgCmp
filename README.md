@@ -113,6 +113,4 @@ checks the independent specification, builds the complete theorems, and audits
 their transitive axioms. The source-path mapping is explicit; the original
 fingerprint manifest is unchanged. See the [formal verification guide](circuit_correctness/README.md).
 
-The proof certifies the exported application circuit, not the Rust compiler,
-exporter, hash collision resistance, Fiat–Shamir, Nova, Spartan, file parsing,
-or the surrounding proof verifier.
+The proof certifies that the correctness exported step circuit indeed implements the function in Specification: the function deterministically lead the input witness to specific coefficients. The witness is binding with Hash, the output is deterministically computed and checked via polynomial opening at the challenge point. Together with the security from hash collision resistance, Fiat–Shamir, Nova, Spartan, file parsing, lead to our Protocol's security.
