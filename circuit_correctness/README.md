@@ -1,10 +1,3 @@
-> Publication layout: the certified `poseidon_97` sources are published at
-> `../SNARKPEG_Poseidon/`. All 106 source fingerprints, mathematical Lean files,
-> and constraint artifacts are unchanged. The exporter includes that directory;
-> `scripts/sources.py` maps its path to the immutable manifest's original names.
-> `artifacts/publication_mapping.json` records the relocation. The theorem covers
-> this 360-step HD implementation, not `poseidon_97_180`.
-
 # Formal correctness of the `poseidon_97` application step
 
 The full exported step has Lean proofs of **soundness, completeness, and output
